@@ -10,6 +10,7 @@
   * coding of the sequential algorithm ??
     * if we want to do it separately from the parallel one
     * could help have something to compare the parallel one with for debugging
+    * k-rank approx too 
   * coding of the parallel algorithm 
     * this is probably (in Tara's opinion) the single longest part 
     * someone could work at this (on the synthetic dataset) while the other works out 
