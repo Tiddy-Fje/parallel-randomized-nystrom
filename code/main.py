@@ -74,7 +74,7 @@ def split_matrix( A, comm ):
                 if i*root_blocks+j == 0:
                     A_ij = temp
                 else:
-                    comm.Send( temp, dest=i*root_blocks+j ) # is isend better?
+                    comm.Send( temp, dest=i*root_blocks+j ) 
             elif rank == i*root_blocks+j:
                 #print('Receiving block ({}, {}) from process {}'.format(i, j, 0))
                 comm.Recv( A_ij, source=0 )
@@ -120,27 +120,24 @@ if __name__ == '__main__':
     seed_factor = 1234
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
+
     n = 2**11
     r = 2**5
     l = 2**9
 
-    mat = synthetic_data( n, r, 'slow', 'polynomial' )
-
-    if comm.size == 1:
-        U, s, V = np.linalg.svd(mat, full_matrices=False)
-        print('largest singular value of A: ', s[0])
-        print('smallest singular value of A: ', s[-1])
-    #if rank == 0:
-
-    #print('Rank : ', rank, 'Input shape : ', mat.shape)
-    #comm.barrier()
-    mat_ij = split_matrix( mat, comm )
-   # print('Split matrix shape : ', mat_ij.shape)
-
+    mat = synthetic_data( n, r, 'fast', 'polynomial' )
     #a = synthetic_data( n, r, 'fast', 'polynomial' )
 
+    mat_ij = split_matrix( mat, comm )
     B, C = sketch( mat_ij, n, l, seed_factor, comm )
+
     if rank == 0:
-        U, s, V = np.linalg.svd(B, full_matrices=False)
-        print('largest singular value of A: ', s[0])
-        print('smallest singular value of A: ', s[-1])
+        L = np.linalg.cholesky( B )
+        Z = C @ np.linalg.inv(L.T)
+        Q, R = np.linalg.qr(Z)
+        U, s, V = np.linalg.svd(R, full_matrices=False)
+        # k-truncated SVD should be used instead in principle 
+        S_2 = np.diag(s**2) 
+        U_hat = Q @ U
+        approx = U_hat @ S_2 @ U_hat.T
+        print('Frobenius norm of the error: ', np.linalg.norm(mat - approx, 'fro') / np.linalg.norm(mat, 'fro'))

@@ -3,10 +3,12 @@
 - [ ] decide work repartition 
 - [ ] ...
 
-## Work repartition reflectio
+## Work repartition reflection
 * the numerical stability and performance analysis require a working implementation
 * a working implementation requires
-  * data pre-processing (potential normalisation, $A$ construction etc.) 
+  * data pre-processing
+    * [x] synthetic data 
+    * [ ] potential normalisation, $A$ construction etc. for the real data 
   * coding of the sequential algorithm ??
     * if we want to do it separately from the parallel one
     * could help have something to compare the parallel one with for debugging

@@ -58,6 +58,12 @@ def fwht(a) -> None:
         h *= 2
 
 if __name__ == '__main__':
-    v = np.arange(8)    
-    ind = -1
-    print(v[:ind+1])
+    np.random.seed(10)
+    x = np.random.randn(8)
+    np.random.seed(11)
+    y = np.random.randn(8)
+    np.random.seed(10)
+    z = np.random.randn(8)
+    print(x)
+    print(y)
+    print(z)
