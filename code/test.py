@@ -2,48 +2,6 @@ from main import  root_blocks_from_comm
 import numpy as np
 from mpi4py import MPI
 
-def get_A_i_to_column_i( A, comm ):
-    rank = comm.Get_rank()
-
-    root_blocks = root_blocks_from_comm(comm)
-    row_blocks, m, n = None, None, None
-    if rank == 0:
-        m, n = A.shape
-        row_blocks = np.ceil(m / root_blocks).astype(int)
-    row_blocks, m, n = comm.bcast( (row_blocks, m, n), root=0 )
-
-    color_col = rank % root_blocks
-    comm_col = comm.Split(color_col, rank)  # Communicator for each column of cores
-
-    A_i = None
-    for i in range(root_blocks):
-        row_len = row_blocks
-        if i == root_blocks - 1:
-            row_len = m - i*row_blocks
-        
-        block_i = np.empty((row_len, n))
-        if rank == 0:
-            row_end = i*row_blocks + row_len
-            block_i[:,:] = A[i*row_blocks:row_end,:] # needed for contiguous memory
-            #if i == 0: # rank 0
-            #    A_i = np.copy(block_i)
-            if i != 0: # we don't need to send to rank 0
-                comm.Send( block_i, dest=i ) 
-        
-        j = rank % root_blocks # column index
-        if j == i:
-            A_i = np.empty((row_len, n))
-            if i == 0: # rank 0 still has the block
-                A_i = comm_col.bcast( block_i, root=0 )
-            else: 
-                if rank == i:
-                    comm.Recv( A_i, source=0 )
-                A_i = comm_col.bcast( A_i, root=0 )
-    return A_i
-
-
-
-
 def simple_vec( n, l, seed_factor, comm ):
     rank = comm.Get_rank()
     root_blocks = root_blocks_from_comm(comm)
@@ -68,11 +26,8 @@ def simple_vec( n, l, seed_factor, comm ):
     omega_i = get_omega_k(i)
     return omega_i.T, omega_j
 
-# check whether split_matrix is working correctly
-# do this by checking whether the blocks compose the original matrix
 
 n = 4
-
 A = np.arange(n**2).reshape(n,n)
 
 comm = MPI.COMM_WORLD
@@ -80,10 +35,6 @@ rank = comm.Get_rank()
 seed_factor = 1234
 
 #A_ij = split_matrix(A, comm)
-
-A_i = get_A_i_to_column_i( A, comm )
-print('rank: ', rank, 'A_i: \n', A_i)
-
 
 
 
