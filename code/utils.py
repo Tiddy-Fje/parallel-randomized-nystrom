@@ -13,7 +13,7 @@ def synthetic_data( n, r, decay_rate, decay_type ) :
             decay_rate = 0.1
         elif decay_rate == 'medium' :
             decay_rate = 0.25
-        decay = 10.0 ** ( decay_rate*others )
+        decay = 10.0 ** ( -decay_rate*others )
     elif decay_type == 'polynomial' :
         if decay_rate == 'fast' :
             decay_rate = 2.0
@@ -21,7 +21,7 @@ def synthetic_data( n, r, decay_rate, decay_type ) :
             decay_rate = 0.5
         elif decay_rate == 'medium' :
             decay_rate = 1.0
-        decay = (others+1)**decay_rate
+        decay = (others+1)**(-decay_rate)
 
     A = np.diag( np.concatenate((ones, decay)) )
     return A
@@ -59,11 +59,5 @@ def fwht(a) -> None:
 
 if __name__ == '__main__':
     np.random.seed(10)
-    x = np.random.randn(8)
-    np.random.seed(11)
-    y = np.random.randn(8)
-    np.random.seed(10)
-    z = np.random.randn(8)
-    print(x)
-    print(y)
-    print(z)
+    x = np.random.rand(8)
+    print(3**x)

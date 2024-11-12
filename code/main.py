@@ -1,6 +1,8 @@
 import numpy as np
 from utils import synthetic_data, fwht_mat
 from mpi4py import MPI
+import scipy as sp
+from scipy.linalg import solve_triangular
 
 def gaussian_sketching( n, l, seed_factor, comm ):
     rank = comm.Get_rank()
@@ -11,7 +13,9 @@ def gaussian_sketching( n, l, seed_factor, comm ):
         np.random.seed(seed_factor*(k+1))
         if k == root_blocks - 1:
             row_blocks = n - (root_blocks-1)*row_blocks
-        return np.random.randn(row_blocks, l) / np.sqrt(l)
+        factor = np.sqrt(l)
+        factor = 1.0
+        return np.random.randn(row_blocks, l) / factor
     
     i = rank // root_blocks
     j = rank % root_blocks
@@ -24,6 +28,7 @@ def gaussian_sketching( n, l, seed_factor, comm ):
     return omega_i.T, omega_j
 
 def SRHT_sketching( A, l ):
+    # TO DO : check whether fwht_mat is working correctly (tara adapted from twht)
     m, n = A.shape
     D = np.diag( np.random.choice([-1, 1], m, replace=True, p=[0.5, 0.5]) ).astype(float)
     # applying the fast Walsh-Hadamard transform
@@ -45,12 +50,12 @@ def split_matrix( A, comm ):
     rank = comm.Get_rank()
     root_blocks = root_blocks_from_comm(comm)
 
-    row_blocks, col_blocks = None, None
-    m, n = A.shape
+    row_blocks, col_blocks, m, n = None, None, None, None
     if rank == 0:
+        m, n = A.shape
         row_blocks = np.ceil(m / root_blocks).astype(int)
         col_blocks = np.ceil(n / root_blocks).astype(int)
-    row_blocks, col_blocks = comm.bcast( (row_blocks, col_blocks), root=0 )
+    row_blocks, col_blocks, m, n = comm.bcast( (row_blocks, col_blocks, m, n), root=0 )
 
     A_ij = None
     for i in range(root_blocks):
@@ -63,38 +68,86 @@ def split_matrix( A, comm ):
             if j == root_blocks - 1:
                 col_len = n - j*col_blocks
 
-            A_ij = np.empty((row_len, col_len))
+            temp = np.empty((row_len, col_len))
             if rank == 0:
                 #print('Sending block ({}, {}) to process {}'.format(i, j, i*root_blocks+j))
-                #print('Block shape : ', A[i*row_blocks:row_end, j*col_blocks:col_end].shape)
                 row_end = i*row_blocks + row_len
                 col_end = j*col_blocks + col_len
-                temp = np.empty((row_len, col_len))
                 temp[:,:] = A[i*row_blocks:row_end, j*col_blocks:col_end] # needed for contiguous memory
-                if i*root_blocks+j == 0:
-                    A_ij = temp
+                if i*root_blocks+j == 0: # rank 0
+                    A_ij = np.copy(temp)
                 else:
                     comm.Send( temp, dest=i*root_blocks+j ) 
             elif rank == i*root_blocks+j:
+                A_ij = np.empty((row_len, col_len))
                 #print('Receiving block ({}, {}) from process {}'.format(i, j, 0))
                 comm.Recv( A_ij, source=0 )
     return A_ij
 
-def sketch( A_ij, n, l, seed_factor, comm ):
+def get_A_i_to_column_i( A, comm ):
+    rank = comm.Get_rank()
+
+    root_blocks = root_blocks_from_comm(comm)
+    row_blocks, m, n = None, None, None
+    if rank == 0:
+        m, n = A.shape
+        row_blocks = np.ceil(m / root_blocks).astype(int)
+    row_blocks, m, n = comm.bcast( (row_blocks, m, n), root=0 )
+
+    color_col = rank % root_blocks
+    comm_col = comm.Split(color_col, rank)  # Communicator for each column of cores
+
+    A_i = None
+    for i in range(root_blocks):
+        row_len = row_blocks
+        if i == root_blocks - 1:
+            row_len = m - i*row_blocks
+        
+        block_i = np.empty((row_len, n))
+        if rank == 0:
+            row_end = i*row_blocks + row_len
+            block_i[:,:] = A[i*row_blocks:row_end,:] # needed for contiguous memory
+            #if i == 0: # rank 0
+            #    A_i = np.copy(block_i)
+            if i != 0: # we don't need to send to rank 0
+                comm.Send( block_i, dest=i ) 
+        
+        j = rank % root_blocks # column index
+        if j == i:
+            A_i = np.empty((row_len, n))
+            if i == 0: # rank 0 still has the block
+                A_i = comm_col.bcast( block_i, root=0 )
+            else: 
+                if rank == i:
+                    comm.Recv( A_i, source=0 )
+                A_i = comm_col.bcast( A_i, root=0 )
+    return A_i
+
+def multiply( A_ij, B_i_T, B_j, n, l, comm, only_C=False ):
+    '''
+    Multiplies A and B matrices in parallel to obtain B.T@A@B and A@B. 
+    A_ij is the local block of A matrix.
+    B_i_T is the transpose of the i-th local block of B matrix.
+    B_j is the j-th local block of B matrix.
+    n is the size of the A matrix.
+    l is the number of columns in the B matrix.
+    seed_factor is the seed for the random number generator.
+    comm is the MPI communicator.
+    '''
     rank = comm.Get_rank()
     root_blocks = root_blocks_from_comm(comm)
 
-    omega_i_T, omega_j = gaussian_sketching( n, l, seed_factor, comm )
-    C_ij = A_ij @ omega_j
-    B_ij = omega_i_T @ C_ij
+    C_ij = A_ij @ B_j
+    B_ij = None
+    if not only_C:
+        B_ij = B_i_T @ C_ij
 
     ## Found splitting syntax asking GPT (from this line to ##)
     color_row = rank // root_blocks
     color_col = rank % root_blocks
 
-    #print('Rank : ', rank, 'Color row : ', color_row, 'Color col : ', color_col)
-    comm_row = comm.Split(color_row, rank)  # Communicator for each row of processes
-    comm_col = comm.Split(color_col, rank)  # Communicator for each column of processes
+    comm_row = comm.Split(color_row, rank)  # Communicator for each row of cores
+    comm_col = comm.Split(color_col, rank)  # Communicator for each column of cores
     ##
 
     C_i = None
@@ -109,11 +162,56 @@ def sketch( A_ij, n, l, seed_factor, comm ):
         B = np.empty_like(B_ij)
 
     if color_col == 0:
+        if rank == 0:
+            print(C_i.shape, C.shape)
         comm_col.Gather(C_i, C, root=0)
 
-    comm.Reduce(B_ij, B, op=MPI.SUM, root=0)
-
+    if not only_C:
+        comm.Reduce(B_ij, B, op=MPI.SUM, root=0)
     return B, C
+
+def rank_k_approx(A_ij, n, l, k, seed_factor, comm ):
+    ## What should be parallelized here ? ##
+    # QR decompositions are n x l in complexity
+    # SVD and EIG are l^3 in complexity
+    B_i_T, B_j = gaussian_sketching( n, l, seed_factor, comm )
+    B, C = multiply( A_ij, B_i_T, B_j, n, l, comm )
+
+    A_k = None
+    U_hat = None
+    S_2 = None
+    if rank == 0:
+        Q = None
+        U = None
+        try:
+            L = np.linalg.cholesky( B )
+            Z = solve_triangular(L, C.T, lower=True).T
+            Q, R = np.linalg.qr(Z) # should this be done in parallel ?
+            U, s, V = np.linalg.svd(R, full_matrices=False)
+            S_2 = s**2 
+        except np.linalg.LinAlgError:
+            lambdas, U = np.linalg.eigh( B )
+            Q, R = np.linalg.qr( C ) # should this be done in parallel ?
+            S_2 = lambdas
+
+        U_hat = Q @ U[:,:k] # should this be done in parallel ?
+        S_2 = S_2[:k]
+        S_2.reshape(1,-1)
+
+    # this is (n^2)l in complexity, and is usually avoided
+    # here we need it to get the Frobenius norm of the error
+    # we therefore do it in parallel 
+    arg_1 = None
+    arg_2 = None
+    if rank == 0:
+        arg_1 = U_hat * S_2
+        arg_2 = U_hat.T
+    A_k_ij = split_matrix( arg_1, comm )
+    M_j = get_A_i_to_column_i( arg_2, comm )
+    _, A_k = multiply( A_k_ij, M_j, M_j, n, n, comm, only_C=True )
+    
+    return A_k
+
 
 if __name__ == '__main__':
 
@@ -122,22 +220,16 @@ if __name__ == '__main__':
     rank = comm.Get_rank()
 
     n = 2**11
-    r = 2**5
-    l = 2**9
+    r = 2**7
+    k = 2**7
+    p = 2**2
+    l = k + p
+
 
     mat = synthetic_data( n, r, 'fast', 'polynomial' )
-    #a = synthetic_data( n, r, 'fast', 'polynomial' )
-
+    #mat = synthetic_data( n, r, 'fast', 'exponential' )
     mat_ij = split_matrix( mat, comm )
-    B, C = sketch( mat_ij, n, l, seed_factor, comm )
 
+    mat_k = rank_k_approx( mat_ij, n, l, k, seed_factor, comm )
     if rank == 0:
-        L = np.linalg.cholesky( B )
-        Z = C @ np.linalg.inv(L.T)
-        Q, R = np.linalg.qr(Z)
-        U, s, V = np.linalg.svd(R, full_matrices=False)
-        # k-truncated SVD should be used instead in principle 
-        S_2 = np.diag(s**2) 
-        U_hat = Q @ U
-        approx = U_hat @ S_2 @ U_hat.T
-        print('Frobenius norm of the error: ', np.linalg.norm(mat - approx, 'fro') / np.linalg.norm(mat, 'fro'))
+        print('Frobenius norm of the error: ', np.linalg.norm(mat - mat_k, 'fro') / np.linalg.norm(mat, 'fro'))
