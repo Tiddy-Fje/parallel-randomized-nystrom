@@ -1,21 +1,30 @@
 \documentclass[a4paper, 12pt,oneside]{article} 
 %\documentclass[a4paper, 12pt,oneside,draft]{article} 
-\usepackage{preamble}
+%\usepackage{preamble}
+\usepackage{preamble_bis}
 %--------------------- ACTUAL FILE ---------------------- %
 \begin{document} 
 %%%
-	%\thispagestyle{empty}
-	%\vspace*{\fill}
-	\begin{center}
-	    \Large
-	    \textbf{Randomized Nyström}
-	        
-	    \vspace{0.4cm}
-	    \large
-		HPC for numerical methods and data analysis \\
-	    Student : Amal Seddas \& Tara Fjellman \\
-	    \small{Fall 2024}
-	\end{center}
+	\input{title_page} 
+	% Add titlepage
+	\clearpage
+	\tableofcontents
+	\thispagestyle{empty}
+	% Add table of contents
+	\clearpage
+	\pagenumbering{arabic}
+	\setcounter{page}{1}
+
+	%\begin{center}
+	%    \Large
+	%    \textbf{Randomized Nyström} 
+	%    \vspace{0.4cm}
+	%    \large
+	%	HPC for numerical methods and data analysis \\
+	%    Student : Amal Seddas \& Tara Fjellman \\
+	%    \small{Fall 2024}
+	%\end{center}
+
 	\section{Introduction}
 	\section{Algorithms}
         \subsection{Sketching Matrices}
@@ -32,3 +41,4 @@
 	%	\section{Runtime Estimation}\label{appendix:runtime_estimation}
 %%%
 \end{document} 
+

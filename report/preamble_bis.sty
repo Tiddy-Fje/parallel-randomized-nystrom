@@ -1,0 +1,187 @@
+\ProvidesPackage{preamble_bis}
+
+\usepackage{amssymb, latexsym, amsmath, xparse,amsthm,mathrsfs,  color,mathrsfs,amsfonts}
+\usepackage[normalem]{ulem}
+\usepackage{blindtext}
+\usepackage[colorlinks=true, pdfstartview=FitV,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+%\usepackage{showlabels}
+%\usepackage{amssymb, latexsym, mathrsfs, hyperref, color}
+%\hypersetup{hidelinks}
+\usepackage{float}
+\usepackage{graphicx}%[draft]
+\graphicspath{{../figures/}} 
+
+\usepackage{pifont}
+\usepackage{epigraph}
+\usepackage{tablefootnote}
+\usepackage{subfig}
+\usepackage{caption}
+\usepackage{etoolbox}
+\usepackage{chngpage}
+\usepackage[section]{placeins}
+\newtheorem{exmp}{Example}[section]
+\usepackage{tikz}
+\usepackage{tikz-cd}
+\usetikzlibrary{calc, intersections, arrows.meta, bending}
+\usetikzlibrary{arrows.meta, bending, positioning}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, bending}
+
+\definecolor{skyblue}{rgb}{0.337, 0.705, 0.913}
+%\usepackage{subcaption}
+\captionsetup[subfigure]{labelformat=empty}
+\definecolor{bg}{rgb}{0.95,0.95,0.95}
+\newcommand{\code}[1]{\colorbox{bg}{\texttt{#1}}}
+
+\usepackage{listings}
+\usepackage{cleveref}
+\usepackage[section]{placeins}
+\setcounter{tocdepth}{3}
+\newcommand{\GL}{\operatorname{GL}}
+\newcommand{\Aut}{\operatorname{Aut}}
+\newcommand{\Mod}[1]{\ (\mathrm{mod}\ #1)}
+\newcommand{\ord}{\mathrm{ord}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\gC}{Cl(K_d)_{\text{genus}}^+}
+\newcommand{\pC}{Cl(K_d)^+}
+\newcommand{\wgC}{Cl(K_d)_{\text{genus}}}
+
+\newcommand{\WC}{\text{WC}}
+\newcommand{\acts}{\curvearrowright}
+\newcommand{\Gmod}{\textbf{G-\text{Mod}}}
+\newcommand{\Ab}{\textbf{Ab}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\HH}{\mathcal{H}}
+\newcommand{\Tr}{\text{Tr}}
+\newcommand{\T}{\mathcal{T}}
+\newcommand{\PP}{\mathcal{P}}
+\newcommand{\D}{\mathcal{D}}
+\newcommand{\M}{\mathcal{M}}
+\newcommand{\No}{\text{N}}
+\newcommand{\KK}{\overline{K}}
+\newcommand{\Sel}{\text{Sel}}
+\newcommand{\cO}{\mathcal{O}}
+\newcommand{\bx}{\textbf{x}}
+\newcommand{\pp}{\mathfrak{p}}
+\newcommand{\fa}{\mathfrak{a}}
+\newcommand{\fb}{\mathfrak{b}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Frac}{\text{Frac}}
+\newcommand{\Amb}{\text{Amb}}
+\newcommand{\pr}{\overline{K}[x_1,...,x_{n}]}
+\newcommand{\Div}{\text{Div}}
+\newcommand{\prn}{\overline{K}[x_1,...,x_{n+1}]}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\F}{\mathbb{F}}
+\newcommand{\trdeg}{\text{Trdeg}}
+\newcommand{\ch}{\text{char}}
+\newcommand{\disc}{\text{disc}}
+\newcommand{\nE}{E[n]}
+\newcommand{\absG}{\text{Gal}(\overline{\Q}/\Q)}
+\newcommand{\gw}{y^2+a_1xy+a_3y=x^3+a_2x^2+a_4x+a_6}
+\newcommand{\Gal}{\text{Gal}}
+\newcommand{\Twist}{\text{Twist}}
+\newcommand{\Isom}{\text{Isom}}
+\newcommand{\QQ}{\overline{\Q}}
+\newcommand{\Hom}{\text{Hom}}
+\newcommand{\tE}{E^{\text{tor}}}
+\newcommand{\sQ}{\Q^\times/\Q^{\times^2}}
+\newcommand{\ps}{\mathbb{P}}
+\newcommand{\im}{\text{Im}}
+\newcommand{\A}{\mathbb{A}}
+\newcommand{\pil}{\pi_{\lambda,p}}
+\newcommand{\pilb}{\bar{\pi}_{\lambda,p}}
+\newcommand{\SL}{\operatorname{SL}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\tor}{\mathrm{tor}}
+%
+% formatting commands
+%
+%--------+---------+---------+---------+---------+---------+---------+
+    \hfuzz 30pt
+    \vfuzz 30pt
+
+% the following commands are identical to \usepackage{fullpage}
+
+    \topmargin 0pt
+    \advance \topmargin by -\headheight
+    \advance \topmargin by -\headsep
+
+    \textheight 8.8in
+
+    \oddsidemargin 0pt
+    \evensidemargin \oddsidemargin
+    \marginparwidth 0.5in
+
+    \textwidth 6.5in
+
+
+\setlength{\parskip}{0.3cm}
+%\parindent 0in
+\renewcommand{\baselinestretch}{1.1}
+
+\setlength{\parskip}{0.2cm}
+\newtheorem {theorem}    {Theorem}[section]
+\newtheorem {problem}    {Problem}
+\newtheorem {lemma}      [theorem]    {Lemma}
+\newtheorem {corollary}  [theorem]    {Corollary}
+\newtheorem {proposition}[theorem]    {Proposition}
+\newtheorem {claim}      [theorem]    {Claim}
+\newtheorem {observation}[theorem]    {Observation}
+\newtheorem {hypothesis} [theorem] {Hypothesis}
+\newtheorem {assumption} [theorem] {Assumption}
+\newtheorem {conjecture} [theorem] {Conjecture}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{ex}[theorem]{Example}
+
+
+\newcommand{\mpc}[1]{\marginpar{\hskip .1cm\scriptsize{#1}}}
+
+\usepackage[top=1.25in,bottom=1.25in,left=1.25in, right=1.25in]{geometry}
+\newcommand{\Go}{\ensuremath{G_{\rangle
+isebox{-0.5ex}{\scriptsize{$0$}}(A_0,i_0)}}}
+\newcommand{\dback}{\ensuremath{\setminus\setminus}}
+
+\newcommand  {\QED}    {\def\qedsymbol{$\square$}\qed}
+\def\wgal{\widetilde w}
+\def\la{\langle}
+\def\ra{\rangle}
+\def\F{\mathbb{F}}
+\def\Z{\mathbb{Z}}
+\def\R{\mathbb{R}}
+\def\C{\mathbb{C}}
+\usepackage[OT2,T1]{fontenc}
+\DeclareSymbolFont{cyrletters}{OT2}{wncyr}{m}{n}
+\DeclareMathSymbol{\Sha}{\mathalpha}{cyrletters}{"58}
+\def\bsl{\backslash}
+\def\calU{\mathcal{U}}
+\def\calF{\mathcal{F}}
+\def\Mg{\mathfrak{g}}
+\def\a{\alpha}
+\newcommand\srel[2]{\begin{smallmatrix} {#1} \\ {#2} \end{smallmatrix}}
+\setlength{\marginparwidth}{2cm}
+\usepackage[colorinlistoftodos]{todonotes}
+\newcommand{\tom}[1]{\todo[size=\tiny,color=green!30]{#1 \\ \hfill --- Tom}}
+\newcommand{\Tom}[1]{\todo[size=\tiny,inline,color=green!30]{#1
+      \\ \hfill --- Tom}}
+\newcommand{\kyuhwan}[1]{\todo[size=\tiny,color=blue!30]{#1 \\ \hfill --- KH}}
+\newcommand{\Kyuhwan}[1]{\todo[size=\tiny,inline,color=blue!30]{#1
+      \\ \hfill --- KH}}
+
+
+%\newcommand{\red}{\textcolor{red}}
+%\newcommand{\blue}{\textcolor{blue}}
+\newenvironment{red}{\relax\color{red}}{\relax}
+\newenvironment{blue}{\relax\color{blue}}{\hspace*{.5ex}\relax}
+
+\newcommand{\ber}{\begin{red}}
+\newcommand{\er}{\end{red}}
+\newcommand{\beb}{\begin{blue}}
+\newcommand{\eb}{\end{blue}}
+\bibliographystyle{references}
+\newcommand{\setsinglecolumn}{
+\if@twocolumn
+   \onecolumn
+\else
+\fi
+}
