@@ -1,5 +1,5 @@
 ## General tasks
-- [ ] email professor about composition of our group by December 3, 2024
+- [x] email professor about composition of our group by December 3, 2024
 - [ ] decide work repartition 
 - [ ] ...
 
