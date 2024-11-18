@@ -1,16 +1,64 @@
 import numpy as np
 import pandas as pd
-import os
+import scipy.sparse as sp
+import bz2
 
-def pol_decay(n: int, r: int, p: int = 1):
-    
-    A = [1.0 for _ in range(r)] + [(2.0 + o) ** (-p) for o in range(n - r)]
-    return np.diag(A)
+def parse_MNIST_file(file_path):
+    '''
+    Parse the MNIST dataset in LIBSVM format and construct a sparse matrix.
+    This was obtained with github copilot and then tested + adapted. 
+    '''
 
-def exp_decay(n: int, r: int, q: float = 0.25):
+    n_features = 784  # MNIST features
+    # Initialize storage for sparse matrix components
+    data = []
+    row_indices = []
+    col_indices = []
+    labels = []
     
-    A = [1.0 for _ in range(r)] + [(10.0) ** (-(o + 1) * q) for o in range(n - r)]
-    return np.diag(A)
+    # Keep track of the current row index
+    current_row = 0
+    
+    # Read the dataset line by line
+    with bz2.BZ2File(file_path, "r") as source_file:
+        for line in source_file:
+            # Decode and split the line
+            elements = line.decode("utf-8").strip().split()
+            
+            # store the label
+            labels.append(int(elements[0]))
+            # Process feature-value pairs (skip the label)
+            for fv_pair in elements[1:]:
+                col_idx, value = map(int, fv_pair.split(":"))
+                row_indices.append(current_row)
+                col_indices.append(col_idx)
+                data.append(value)
+            
+            # Move to the next row
+            current_row += 1
+
+    # Construct the sparse matrix in one step
+    n_samples = current_row  # The total number of rows processed
+    return sp.csr_matrix((data, (row_indices, col_indices)), shape=(n_samples, n_features)), np.array(labels)
+
+def save_MNIST():
+    '''
+    Save the MNIST dataset as a sparse matrix and labels as numpy array.
+    '''
+    train_file = '../data/mnist.bz2'
+    sparse_matrix, labels = parse_MNIST_file(train_file)
+    print(f"Constructed sparse matrix with shape {sparse_matrix.shape} and {sparse_matrix.nnz} non-zero elements")
+    sp.save_npz('../data/mnist_train.npz', sparse_matrix)
+    np.save('../data/mnist_train_labels.npy', labels)
+    
+    test_file = '../data/mnist.t.bz2'
+    sparse_matrix, labels = parse_MNIST_file(test_file)
+    print(f"Constructed sparse matrix with shape {sparse_matrix.shape} and {sparse_matrix.nnz} non-zero elements")
+    sp.save_npz('../data/mnist_test.npz', sparse_matrix)
+    np.save('../data/mnist_test_labels.npy', labels)
+    
+    return
+
 
 def rbf(data: np.ndarray, c: int, savepath: str = None):
     """
@@ -18,33 +66,12 @@ def rbf(data: np.ndarray, c: int, savepath: str = None):
     This matrix is generated using the formula exp(-||xi - xj||^2 / c^2).
     """
     data_norm = np.sum(data ** 2, axis=-1)
-    A = np.exp(-(1 / c ** 2) * (data_norm[:, None] + data_norm[None, :] - 2 * np.dot(data, data.T)))
-
+    # using the fact that ||x-y||^2 = ||x||^2 + ||y||^2 - 2<x,y>
+    A = np.exp( -(1 / c ** 2) * (data_norm[:, None] + data_norm[None, :] - 2 * np.dot(data, data.T)) )
     if savepath is not None:
-        A.tofile(savepath, sep=',', format='%10.f')
+        assert A.shape[0] < 30000, "Matrix is too large to save"
+        np.save(savepath, A)
     return A
-
-def read_mnist(filename: str, size: int = 784, savepath: str = None):
-    
-    dataR = pd.read_csv(filename, sep=',', header=None)
-    n = len(dataR)
-    data = np.zeros((n, size))
-    labels = np.zeros((n, 1))
-
-    for i in range(n):
-        l = dataR.iloc[i, 0]
-        labels[i] = int(l[0])
-        l = l[2:]
-        indices_values = [tuple(map(float, pair.split(':'))) for pair in l.split()]
-        indices, values = zip(*indices_values)
-        indices = [int(i) for i in indices]
-        data[i, indices] = values
-
-    if savepath is not None:
-        data.tofile('./denseData.csv', sep=',', format='%10.f')
-        labels.tofile('./labels.csv', sep=',', format='%10.f')
-
-    return data, labels
 
 def read_yearPredictionMSD(filename: str, size: int = 784, savepath: str = None):
     
@@ -69,22 +96,17 @@ def read_yearPredictionMSD(filename: str, size: int = 784, savepath: str = None)
     return data, labels
 
 def generate_matrix(n: int, matrix_type: str, **kwargs):
-    
-    if matrix_type == 'pol_decay':
-        return pol_decay(n, kwargs.get('r', 10), kwargs.get('p', 1))
-    elif matrix_type == 'exp_decay':
-        return exp_decay(n, kwargs.get('r', 10), kwargs.get('q', 0.25))
-    elif matrix_type == 'rbf':
+    if matrix_type == 'rbf':
         data = kwargs.get('data')
         if data is None:
             raise ValueError("Data must be provided for RBF matrix generation.")
         c = kwargs.get('c', 100)
         return rbf(data, c)
-    elif matrix_type == 'mnist':
-        filename = kwargs.get('filename', 'path_to_mnist.csv')
-        data, _ = read_mnist(filename)
-        c = kwargs.get('c', 100)
-        return rbf(data, c)
+    #elif matrix_type == 'mnist':
+    #    filename = kwargs.get('filename', 'path_to_mnist.csv')
+    #    data, _ = read_mnist(filename)
+    #    c = kwargs.get('c', 100)
+    #    return rbf(data, c)
     elif matrix_type == 'year_prediction':
         filename = kwargs.get('filename', 'path_to_year_prediction.csv')
         data, _ = read_yearPredictionMSD(filename)
@@ -92,3 +114,13 @@ def generate_matrix(n: int, matrix_type: str, **kwargs):
         return rbf(data, c)
     else:
         raise ValueError(f"Unknown matrix type: {matrix_type}")
+    
+if __name__ == '__main__':
+    # memory (in GB) \approx 7.5 * n**2 / 1e9
+    # avoid n > 30000 (equivalent to \approx 7GB)
+    mat = sp.load_npz('../data/mnist_train.npz')
+    lab = np.load('../data/mnist_train_labels.npy')
+    # get indices of labels == 0
+    idx = np.where(lab == 0)[0]
+
+    print(idx[:5])

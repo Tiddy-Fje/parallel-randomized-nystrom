@@ -5,15 +5,9 @@ import urllib.request
 
 # URLs for downloading the dataset
 mnist_url = 'https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass/mnist.scale.bz2'
-input_file = 'mnist.scale.bz2'
-output_file = 'mnist.scale'
+input_file = '../data/mnist.bz2'
+output_file = '../data/mnist'
 output_file_2048 = 'mnist_2048'
-
-# Step 1: Download the file if it does not exist
-if not os.path.exists(input_file):
-    print(f"Downloading {input_file}...")
-    urllib.request.urlretrieve(mnist_url, input_file)
-    print(f"Downloaded {input_file}")
 
 # Step 2: Decompress the file
 print(f"Decompressing {input_file}...")
