@@ -2,7 +2,7 @@ from utils import synthetic_data, fwht_mat
 import parallel_matrix as pm
 import numpy as np
 from mpi4py import MPI
-from scipy.linalg import solve_triangular
+from scipy.linalg import solve_triangular, hadamard
 
 def gaussian_sketching( n, l, seed_factor, comm ):
     rank = comm.Get_rank()
@@ -27,25 +27,50 @@ def gaussian_sketching( n, l, seed_factor, comm ):
     omega_i = get_omega_k(i)
     return omega_i.T, omega_j
 
-def SRHT_sketching( A, l ):
-    # TO DO : check whether fwht_mat is working correctly (tara adapted from twht)
-    m, n = A.shape
-    D = np.diag( np.random.choice([-1, 1], m, replace=True, p=[0.5, 0.5]) ).astype(float)
-    # applying the fast Walsh-Hadamard transform
-    fwht_mat(D)
+def int_check( to_check ):
+    assert to_check.is_integer(), "Value is not an integer"
+    return int(to_check)
 
-    rows = np.concatenate( (np.ones(l), np.zeros(m-l)) ).astype(bool)
-    perm = np.random.permutation(m)
+def SRHT_sketching( n, l, seed_factor, comm  ):
+    rank = comm.Get_rank()
+    root_blocks = pm.root_blocks_from_comm(comm)
+
+    n_over_root_p = int_check( n / root_blocks )
+    H = hadamard(n_over_root_p) / np.sqrt( n_over_root_p )
+    np.random.seed(seed_factor*(root_blocks+2)) # to avoid seed overlap
+    rows = np.concatenate( (np.ones(l), np.zeros(n_over_root_p-l)) ).astype(bool)
+    perm = np.random.permutation(n_over_root_p)
     selected_rows = rows[perm]
+    RH = H[selected_rows,:]
 
-    return np.sqrt(m/l) * D[selected_rows,:] @ A
+    def get_omega_k( k ):
+        np.random.seed(seed_factor*(k+1))
+        factor = np.sqrt( n / (root_blocks*l) )
+        D_Lk = np.random.choice([-1, 1], size=l, replace=True, p=[0.5, 0.5])
+        D_Rk = np.random.choice([-1, 1], size=n_over_root_p, replace=True, p=[0.5, 0.5])
+        omega_k = factor * D_Lk.reshape(-1,1) * RH
+        return ( D_Rk.reshape(-1,1) * omega_k.T ).T
+    
+    i = rank // root_blocks
+    j = rank % root_blocks
+    omega_j_T = get_omega_k(j)
+    
+    if i == j :
+        return omega_j_T, omega_j_T.T
+    
+    omega_i = get_omega_k(i)
+    #D = np.diag( np.random.choice([-1, 1], m, replace=True, p=[0.5, 0.5]) ).astype(float)
+    # applying the fast Walsh-Hadamard transform
+    #fwht_mat(D)
+
+    return omega_i, omega_j_T.T
 
 
-def rank_k_approx(A_ij, n, l, k, seed_factor, comm ):
+def rank_k_approx(A_ij, n, l, k, sketching_func, seed_factor, comm ):
     ## What should be parallelized here ? ##
     # QR decompositions are n x l in complexity
     # SVD and EIG are l^3 in complexity
-    B_i_T, B_j = gaussian_sketching( n, l, seed_factor, comm )
+    B_i_T, B_j = sketching_func( n, l, seed_factor, comm )
     B, C = pm.multiply( A_ij, B_i_T, B_j, n, l, comm )
 
     A_k = None
@@ -90,16 +115,19 @@ if __name__ == '__main__':
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
-    n = 2**11
-    r = 2**7
-    k = 2**7
-    p = 2**2
+    n = 2**12
+    r = 2**8
+    k = 2**8
+    p = 2**9
     l = k + p
 
+#    mat = synthetic_data( n, r, 'slow', 'polynomial' )
     mat = synthetic_data( n, r, 'fast', 'polynomial' )
     #mat = synthetic_data( n, r, 'fast', 'exponential' )
     mat_ij = pm.split_matrix( mat, comm )
 
-    mat_k = rank_k_approx( mat_ij, n, l, k, seed_factor, comm )
+    #sketching_func = gaussian_sketching
+    sketching_func = SRHT_sketching
+    mat_k = rank_k_approx( mat_ij, n, l, k, sketching_func, seed_factor, comm )
     if rank == 0:
         print('Frobenius norm of the error: ', np.linalg.norm(mat - mat_k, 'fro') / np.linalg.norm(mat, 'fro'))
