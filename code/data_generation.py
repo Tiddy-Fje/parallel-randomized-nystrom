@@ -39,23 +39,29 @@ def parse_MNIST_file(file_path):
 
     # Construct the sparse matrix in one step
     n_samples = current_row  # The total number of rows processed
-    return sp.csr_matrix((data, (row_indices, col_indices)), shape=(n_samples, n_features)), np.array(labels)
+    return sp.csr_matrix((data, (row_indices, col_indices)), shape=(n_samples, n_features), dtype=float), np.array(labels)
 
-def save_MNIST():
+def save_MNIST(normalize = False):
     '''
     Save the MNIST dataset as a sparse matrix and labels as numpy array.
     '''
     train_file = '../data/mnist.bz2'
-    sparse_matrix, labels = parse_MNIST_file(train_file)
-    print(f"Constructed sparse matrix with shape {sparse_matrix.shape} and {sparse_matrix.nnz} non-zero elements")
-    sp.save_npz('../data/mnist_train.npz', sparse_matrix)
-    np.save('../data/mnist_train_labels.npy', labels)
-    
     test_file = '../data/mnist.t.bz2'
-    sparse_matrix, labels = parse_MNIST_file(test_file)
-    print(f"Constructed sparse matrix with shape {sparse_matrix.shape} and {sparse_matrix.nnz} non-zero elements")
-    sp.save_npz('../data/mnist_test.npz', sparse_matrix)
-    np.save('../data/mnist_test_labels.npy', labels)
+
+    sparse_matrix_tr, labels_tr = parse_MNIST_file(train_file)
+    sparse_matrix_te, labels_te = parse_MNIST_file(test_file)
+
+    print(f"Constructed sparse matrix with shape {sparse_matrix_tr.shape} and {sparse_matrix_tr.nnz} non-zero elements")
+    print(f"Constructed sparse matrix with shape {sparse_matrix_te.shape} and {sparse_matrix_te.nnz} non-zero elements")
+
+    if normalize:
+        sparse_matrix_tr /= 255.0
+        sparse_matrix_te /= 255.0  
+
+    sp.save_npz('../data/mnist_train.npz', sparse_matrix_tr)
+    np.save('../data/mnist_train_labels.npy', labels_tr)
+    sp.save_npz('../data/mnist_test.npz', sparse_matrix_te)
+    np.save('../data/mnist_test_labels.npy', labels_te)
     
     return
 
@@ -95,6 +101,13 @@ def read_yearPredictionMSD(filename: str, size: int = 784, savepath: str = None)
 
     return data, labels
 
+def generate_MNIST_matrix( n:int, c:int=10 ):
+    mat = sp.load_npz('../data/mnist_train.npz')
+    #lab = np.load('../data/mnist_train_labels.npy')
+    #idx = np.where(lab == 0)[0]
+    #print(A[idx[0],idx[1]], A[idx[0],idx[1]+1])
+    return rbf( mat[:n,:].toarray(), c )
+
 def generate_matrix(n: int, matrix_type: str, **kwargs):
     if matrix_type == 'rbf':
         data = kwargs.get('data')
@@ -118,9 +131,4 @@ def generate_matrix(n: int, matrix_type: str, **kwargs):
 if __name__ == '__main__':
     # memory (in GB) \approx 7.5 * n**2 / 1e9
     # avoid n > 30000 (equivalent to \approx 7GB)
-    mat = sp.load_npz('../data/mnist_train.npz')
-    lab = np.load('../data/mnist_train_labels.npy')
-    # get indices of labels == 0
-    idx = np.where(lab == 0)[0]
-
-    print(idx[:5])
+    n = 1000

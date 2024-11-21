@@ -3,6 +3,7 @@ import parallel_matrix as pm
 import numpy as np
 from mpi4py import MPI
 from scipy.linalg import solve_triangular, hadamard
+import data_generation as dg
 
 def gaussian_sketching( n, l, seed_factor, comm ):
     rank = comm.Get_rank()
@@ -118,16 +119,20 @@ if __name__ == '__main__':
     n = 2**12
     r = 2**8
     k = 2**8
-    p = 2**9
+    p = 2**8
     l = k + p
 
 #    mat = synthetic_data( n, r, 'slow', 'polynomial' )
     mat = synthetic_data( n, r, 'fast', 'polynomial' )
     #mat = synthetic_data( n, r, 'fast', 'exponential' )
-    mat_ij = pm.split_matrix( mat, comm )
+
+    c = 10
+    mat_bis = dg.generate_MNIST_matrix( n, c )
+
+    mat_ij = pm.split_matrix( mat_bis, comm )
 
     #sketching_func = gaussian_sketching
     sketching_func = SRHT_sketching
     mat_k = rank_k_approx( mat_ij, n, l, k, sketching_func, seed_factor, comm )
     if rank == 0:
-        print('Frobenius norm of the error: ', np.linalg.norm(mat - mat_k, 'fro') / np.linalg.norm(mat, 'fro'))
+        print('Frobenius norm of the error: ', np.linalg.norm(mat_bis - mat_k, 'fro') / np.linalg.norm(mat_bis, 'fro'))
