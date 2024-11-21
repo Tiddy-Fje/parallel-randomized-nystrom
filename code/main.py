@@ -13,10 +13,16 @@ def time_sketching( n, l, algorithm, seed_factor, comm, n_rep ):
     runtimes = np.empty(n_rep)
     for  i in range(n_rep):
         start = time.perf_counter()
-        omega_T, omega = algorithm(n, l, seed_factor, comm)
+        if size == 1:
+            omega = algorithm(n, l, seed_factor)
+        else:
+            omega_T, omega = algorithm(n, l, seed_factor, comm)
         end = time.perf_counter()
         runtimes[i] = end - start
         comm.Barrier()
+
+    if size == 1:
+        return runtimes
 
     tot_runtimes = None
     if rank == 0:
@@ -26,10 +32,14 @@ def time_sketching( n, l, algorithm, seed_factor, comm, n_rep ):
     max_runtimes = None
     if rank == 0:
         max_runtimes = np.max(tot_runtimes, axis=0) 
-        print(f'Max runtime: {max_runtimes}')
     return max_runtimes
 
-def gaussian_sketching( n, l, seed_factor, comm ):
+
+def sequential_gaussian_sketching( n, l, seed_factor ):
+    np.random.seed(seed_factor)
+    return np.random.randn(n, l) / np.sqrt(l)
+
+def gaussian_sketching( n, l, seed_factor, comm ):    
     rank = comm.Get_rank()
     root_blocks = pm.root_blocks_from_comm(comm)
 
@@ -63,6 +73,7 @@ def SRHT_sketching( n, l, seed_factor, comm  ):
     n_over_root_p = int_check( n / root_blocks )
     H = hadamard(n_over_root_p) / np.sqrt( n_over_root_p )
     np.random.seed(seed_factor*(root_blocks+2)) # to avoid seed overlap
+    assert n_over_root_p >= l, f"l={l} should be smaller than n/sqrt(p)={n_over_root_p}"
     rows = np.concatenate( (np.ones(l), np.zeros(n_over_root_p-l)) ).astype(bool)
     perm = np.random.permutation(n_over_root_p)
     selected_rows = rows[perm]
