@@ -1,4 +1,4 @@
-from utils import synthetic_data, fwht_mat
+from utils import synthetic_data
 import parallel_matrix as pm
 import numpy as np
 from mpi4py import MPI
@@ -14,7 +14,7 @@ def gaussian_sketching( n, l, seed_factor, comm ):
         np.random.seed(seed_factor*(k+1))
         if k == root_blocks - 1:
             row_blocks = n - (root_blocks-1)*row_blocks
-        factor = np.sqrt(l)
+        factor = np.sqrt(l)# CHECK WHICH FACTOR TO USE
         factor = 1.0
         return np.random.randn(row_blocks, l) / factor
     
@@ -60,9 +60,6 @@ def SRHT_sketching( n, l, seed_factor, comm  ):
         return omega_j_T, omega_j_T.T
     
     omega_i = get_omega_k(i)
-    #D = np.diag( np.random.choice([-1, 1], m, replace=True, p=[0.5, 0.5]) ).astype(float)
-    # applying the fast Walsh-Hadamard transform
-    #fwht_mat(D)
 
     return omega_i, omega_j_T.T
 
