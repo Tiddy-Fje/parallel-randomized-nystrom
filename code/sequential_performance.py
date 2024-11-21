@@ -1,10 +1,10 @@
 from parallel import gaussian_sketching, SRHT_sketching, time_sketching
-from sequential import sequential_gaussian_sketch, block_SRHT
+from sequential import sequential_gaussian_sketch, block_SRHT, block_SRHT_bis
 import numpy as np
 from mpi4py import MPI
 import h5py
 
-# TO DO : SEQUENTIAL SRHT SKETCHING FUNCTION seems too slow (TALK W/ AMAL)
+# TO DO : SEQUENTIAL SRHT SKETCHING FUNCTION SLOWER THAN ALTERNATIVE (TALK W/ AMAL)
 
 def analysis( n, l, algorithm, seed_factor, comm, n_rep, output_file ):
     max_runtimes = time_sketching(n, l, algorithm, seed_factor, comm, n_rep) 
@@ -15,7 +15,7 @@ def analysis( n, l, algorithm, seed_factor, comm, n_rep, output_file ):
         label = None
         if algorithm in [gaussian_sketching,sequential_gaussian_sketch]:
             label = 'gaussian'
-        elif algorithm in [SRHT_sketching, block_SRHT]:# or SRHT_sketch:
+        elif algorithm in [SRHT_sketching, block_SRHT, block_SRHT_bis]:
             label = 'SRHT'
         else:
             raise ValueError(f"Unknown algorithm")
@@ -66,11 +66,13 @@ if __name__ == '__main__':
 
     comm = MPI.COMM_WORLD    
     for n in ns:
-        analysis(n, l, sequential_gaussian_sketch, seed_factor, comm, n_rep, output_file)
+        #analysis(n, l, sequential_gaussian_sketch, seed_factor, comm, n_rep, output_file)
         analysis(n, l, block_SRHT, seed_factor, comm, n_rep, output_file)
+        analysis(n, l, block_SRHT_bis, seed_factor, comm, n_rep, output_file)
     for l in ls:
-        analysis(n, l, sequential_gaussian_sketch, seed_factor, comm, n_rep, output_file)
+        #analysis(n, l, sequential_gaussian_sketch, seed_factor, comm, n_rep, output_file)
         analysis(n, l, block_SRHT, seed_factor, comm, n_rep, output_file)
+        analysis(n, l, block_SRHT_bis, seed_factor, comm, n_rep, output_file)
 
     with h5py.File(f'{output_file}.h5', 'r') as f:
         print(f['gaussian'].keys())
