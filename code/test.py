@@ -2,53 +2,6 @@ import numpy as np
 import scipy.sparse as sp
 import bz2
 
-def parse_MNIST(file_path):
-    '''
-    Parse the MNIST dataset in LIBSVM format and construct a sparse matrix.
-    This was obtained with github copilot and then tested + adapted. 
-    '''
-
-    n_features = 784  # MNIST features
-    # Initialize storage for sparse matrix components
-    data = []
-    row_indices = []
-    col_indices = []
-    
-    # Keep track of the current row index
-    current_row = 0
-    
-    # Read the dataset line by line
-    with bz2.BZ2File(file_path, "r") as source_file:
-        for line in source_file:
-            # Decode and split the line
-            elements = line.decode("utf-8").strip().split()
-            
-            # Process feature-value pairs (skip the label)
-            for fv_pair in elements[1:]:
-                col_idx, value = map(int, fv_pair.split(":"))
-                row_indices.append(current_row)
-                col_indices.append(col_idx)
-                data.append(value)
-            
-            # Move to the next row
-            current_row += 1
-
-    # Construct the sparse matrix in one step
-    n_samples = current_row  # The total number of rows processed
-    return sp.csr_matrix((data, (row_indices, col_indices)), shape=(n_samples, n_features))
-
-# Parameters
-train_file = '../data/mnist.bz2'
-# Parse and construct the sparse matrix
-sparse_matrix = parse_MNIST(train_file)
-print(f"Constructed sparse matrix with shape {sparse_matrix.shape} and {sparse_matrix.nnz} non-zero elements")
-sp.save_npz('../data/mnist_train.npz', sparse_matrix)
-test_file = '../data/mnist.t.bz2'
-# Parse and construct the sparse matrix
-sparse_matrix = parse_MNIST(test_file)
-print(f"Constructed sparse matrix with shape {sparse_matrix.shape} and {sparse_matrix.nnz} non-zero elements")
-sp.save_npz('../data/mnist_test.npz', sparse_matrix)
-
 # load the sparse matrix from disk
 #sparse_matrix = sp.load_npz('../data/mnist.npz')
 

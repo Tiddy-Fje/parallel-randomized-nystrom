@@ -75,3 +75,9 @@ def nuc_norm_A(matrix_type, n, R, p, sigma):
 def print_results(error_nuc, wt, cholesky_success, random_seed):
     print(f"error_nuc = {error_nuc}, runtime = {wt}")
     print(f"cholesky {'succeeded' if cholesky_success else 'failed'}, random_seed = {random_seed}")
+
+
+if __name__ == '__main__':
+    np.random.seed(10)
+    x = np.random.rand(8)
+    print(3**x)

@@ -3,6 +3,31 @@ import pandas as pd
 import scipy.sparse as sp
 import bz2
 
+def synthetic_data( n, r, decay_rate, decay_type ) : 
+    ones = np.ones(r)
+    others = np.arange(1,n-r+1)
+
+    decay = np.empty(others.shape)
+    if decay_type == 'exponential' :
+        if decay_rate == 'fast' :
+            decay_rate = 1.0
+        elif decay_rate == 'slow' :
+            decay_rate = 0.1
+        elif decay_rate == 'medium' :
+            decay_rate = 0.25
+        decay = 10.0 ** ( -decay_rate*others )
+    elif decay_type == 'polynomial' :
+        if decay_rate == 'fast' :
+            decay_rate = 2.0
+        elif decay_rate == 'slow' :
+            decay_rate = 0.5
+        elif decay_rate == 'medium' :
+            decay_rate = 1.0
+        decay = (others+1)**(-decay_rate)
+
+    A = np.diag( np.concatenate((ones, decay)) )
+    return A
+
 def parse_MNIST_file(file_path):
     '''
     Parse the MNIST dataset in LIBSVM format and construct a sparse matrix.
