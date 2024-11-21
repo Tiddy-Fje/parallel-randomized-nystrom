@@ -1,10 +1,12 @@
-from main import gaussian_sketching, SRHT_sketching
+from main import gaussian_sketching, SRHT_sketching, time_sketching
 import numpy as np
 from mpi4py import MPI
 import time
 import h5py
 
-def time_sketching( n, l, algorithm, seed_factor, comm, n_rep, output_file ): 
+def analysis( n, l, algorithm, seed_factor, comm, n_rep, output_file ):
+    max_runtimes = time_sketching(n, l, algorithm, seed_factor, comm, n_rep) 
+
     label = None
     if algorithm == gaussian_sketching:
         label = 'gaussian'
@@ -13,22 +15,8 @@ def time_sketching( n, l, algorithm, seed_factor, comm, n_rep, output_file ):
     else:
         raise ValueError(f"Unknown algorithm")
 
-    runtimes = np.empty(n_rep)
-    for  i in range(n_rep):
-        start = time.perf_counter()
-        omega_T, omega = algorithm(n, l, seed_factor, comm)
-        end = time.perf_counter()
-        runtimes[i] = end - start
-        comm.Barrier()
-
-    tot_runtimes = None
+    rank = comm.Get_rank()
     if rank == 0:
-        tot_runtimes = np.empty((size,n_rep), dtype=float)
-    comm.Gather(runtimes, tot_runtimes, root=0)
-
-    max_runtimes = None
-    if rank == 0:
-        max_runtimes = np.max(tot_runtimes, axis=0) 
         print(f'Max runtime: {max_runtimes}')
         with h5py.File(f'{output_file}.h5', 'a') as f:
             f[label].create_dataset(f'n={n}_mean', data=np.mean(max_runtimes))
@@ -59,8 +47,8 @@ if rank == 0:
         f['parameters'].create_dataset('seed_factor', data=seed_factor)
         
 for n in ns:
-    time_sketching(n, l, gaussian_sketching, seed_factor, comm, n_rep, output_file)
-    time_sketching(n, l, SRHT_sketching, seed_factor, comm, n_rep, output_file)
+    temp = analysis(n, l, gaussian_sketching, seed_factor, comm, n_rep, output_file)
+    temp = analysis(n, l, SRHT_sketching, seed_factor, comm, n_rep, output_file)
 
 if rank == 0:
     with h5py.File(f'{output_file}.h5', 'r') as f:

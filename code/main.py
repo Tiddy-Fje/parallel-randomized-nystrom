@@ -4,6 +4,30 @@ import numpy as np
 from mpi4py import MPI
 from scipy.linalg import solve_triangular, hadamard
 import data_generation as dg
+import time
+
+def time_sketching( n, l, algorithm, seed_factor, comm, n_rep ):
+    rank = comm.Get_rank()
+    size = comm.Get_size() 
+
+    runtimes = np.empty(n_rep)
+    for  i in range(n_rep):
+        start = time.perf_counter()
+        omega_T, omega = algorithm(n, l, seed_factor, comm)
+        end = time.perf_counter()
+        runtimes[i] = end - start
+        comm.Barrier()
+
+    tot_runtimes = None
+    if rank == 0:
+        tot_runtimes = np.empty((size,n_rep), dtype=float)
+    comm.Gather(runtimes, tot_runtimes, root=0)
+
+    max_runtimes = None
+    if rank == 0:
+        max_runtimes = np.max(tot_runtimes, axis=0) 
+        print(f'Max runtime: {max_runtimes}')
+    return max_runtimes
 
 def gaussian_sketching( n, l, seed_factor, comm ):
     rank = comm.Get_rank()
