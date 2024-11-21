@@ -5,8 +5,13 @@ import numpy as np
 import math
 import time
 from scipy.linalg import norm, cholesky, qr, svd, solve_triangular
-from data_gen import *
+from data_generation import *
 from utility import *
+
+def sequential_gaussian_sketch(n, l, seed_factor):
+    """Generate Gaussian sketching matrix."""
+    rng = np.random.default_rng(seed_factor)
+    return rng.normal(size=(n, l)) # / np.sqrt(l)  # FIGURE OUT IF NORMALIZATION IS NEEDED
 
 def SRHT_sketch(n, l, random_seed):
     """Generate a Subsampled Randomized Hadamard Transform (SRHT) sketching matrix."""
@@ -18,6 +23,7 @@ def SRHT_sketch(n, l, random_seed):
         lambda i, j: signs[i] * (-1) ** (bin(i & randCol[j]).count("1"))
     ), (n, l), dtype=int) / math.sqrt(l)
 
+# WHAT IS THIS ??
 def short_axis_sketch(n, l, t, random_seed):
     """Generate a short-axis sketching matrix."""
     rng = np.random.default_rng(random_seed)
@@ -29,10 +35,7 @@ def short_axis_sketch(n, l, t, random_seed):
         sketch[i, col] = rng.choice([-1, 1], size=t) * rng.uniform(1.0, 2.0, size=t)
     return sketch
 
-def block_gaussian_sketch(n, l, random_seed):
-    """Generate a block Gaussian sketching matrix."""
-    rng = np.random.default_rng(random_seed)
-    return rng.normal(size=(n, l))
+
 
 def block_SRHT(n, l, random_seed):
     """Generate a block Subsampled Randomized Hadamard Transform (SRHT) sketching matrix."""
@@ -45,81 +48,83 @@ def block_SRHT(n, l, random_seed):
         lambda i, j: signsRows[i] * signsCols[j] * (-1) ** (bin(i & randCol[j]).count("1"))
     ), (n, l), dtype=int) / math.sqrt(l)
 
-# Retrieve settings from a CSV file
-save_results = False
-line_id = get_counter()
-n, matrix_type, RR, p, sigma, l, k, sketch_matrix, t = get_settings_from_csv(line_id)
-print_settings(n, matrix_type, RR, p, sigma, l, k, sketch_matrix, t, 1)
 
-# Check assumptions for input validity
-assert n > 0 and math.log2(n).is_integer(), "n must be a power of 2"
-assert l >= k, "l must be greater or equal than k"
-assert t <= l, "t must be smaller or equal than l"
+if __name__ == "__main__":
+    # Retrieve settings from a CSV file
+    save_results = False
+    line_id = get_counter()
+    n, matrix_type, RR, p, sigma, l, k, sketch_matrix, t = get_settings_from_csv(line_id)
+    print_settings(n, matrix_type, RR, p, sigma, l, k, sketch_matrix, t, 1)
 
-# Generate matrix A based on type
-match matrix_type:
-    case 0:
-        A = A_PolyDecay(n, RR, p)
-    case 1:
-        A = A_ExpDecay(n, RR, p)
-    case 2:
-        A = A_MNIST(n, sigma)
-    case 3:
-        A = A_YearPredictionMSD(n, sigma)
-    case _:
-        raise Exception("Unknown matrix type")
+    # Check assumptions for input validity
+    assert n > 0 and math.log2(n).is_integer(), "n must be a power of 2"
+    assert l >= k, "l must be greater or equal than k"
+    assert t <= l, "t must be smaller or equal than l"
 
-start_time = time.time()
+    # Generate matrix A based on type
+    match matrix_type:
+        case 0:
+            A = A_PolyDecay(n, RR, p)
+        case 1:
+            A = A_ExpDecay(n, RR, p)
+        case 2:
+            A = A_MNIST(n, sigma)
+        case 3:
+            A = A_YearPredictionMSD(n, sigma)
+        case _:
+            raise Exception("Unknown matrix type")
 
-# Generate sketching matrix Omega
-random_seed = np.random.randint(2**30)
-match sketch_matrix:
-    case 0:
-        omega = SRHT_sketch(n, l, random_seed)
-    case 1:
-        omega = short_axis_sketch(n, l, t, random_seed)
-    case 2:
-        omega = block_gaussian_sketch(n, l, random_seed)
-    case 3:
-        omega = block_SRHT(n, l, random_seed)
-    case _:
-        raise Exception("Unknown sketch type")
+    start_time = time.time()
 
-# Compute C = A * Omega and B = Omega^T * C
-C = A @ omega
-B = omega.T @ C
+    # Generate sketching matrix Omega
+    random_seed = np.random.randint(2**30)
+    match sketch_matrix:
+        case 0:
+            omega = SRHT_sketch(n, l, random_seed)
+        case 1:
+            omega = short_axis_sketch(n, l, t, random_seed)
+        case 2:
+            omega = block_gaussian_sketch(n, l, random_seed)
+        case 3:
+            omega = block_SRHT(n, l, random_seed)
+        case _:
+            raise Exception("Unknown sketch type")
 
-# Cholesky factorization and calculation of Z
-cholesky_success = True
-try:
-    L = cholesky(B).T
-    Z = solve_triangular(L, C.T, lower=True).T
-except np.linalg.LinAlgError:
-    cholesky_success = False
-    B_U, B_S, B_Vt = svd(B, full_matrices=False)
-    pseudo_sqrtS = np.array([1.0 / b_s ** 0.5 if b_s != 0 else 0 for b_s in B_S])
-    Z = C @ B_U @ np.diag(pseudo_sqrtS) @ B_U.T
+    # Compute C = A * Omega and B = Omega^T * C
+    C = A @ omega
+    B = omega.T @ C
 
-# QR factorization
-Q, R = qr(Z, mode='economic')
+    # Cholesky factorization and calculation of Z
+    cholesky_success = True
+    try:
+        L = cholesky(B).T
+        Z = solve_triangular(L, C.T, lower=True).T
+    except np.linalg.LinAlgError:
+        cholesky_success = False
+        B_U, B_S, B_Vt = svd(B, full_matrices=False)
+        pseudo_sqrtS = np.array([1.0 / b_s ** 0.5 if b_s != 0 else 0 for b_s in B_S])
+        Z = C @ B_U @ np.diag(pseudo_sqrtS) @ B_U.T
 
-# Truncated SVD
-U, S, Vt = svd(R, full_matrices=False)
-U_k = U[:, :k]
-S_k = S[:k]
+    # QR factorization
+    Q, R = qr(Z, mode='economic')
 
-# Compute the low-rank approximation Uhat_k = Q * U_k
-Uhat_k = Q @ U_k
+    # Truncated SVD
+    U, S, Vt = svd(R, full_matrices=False)
+    U_k = U[:, :k]
+    S_k = S[:k]
 
-# Compute the low-rank approximation matrix A_nystrom
-A_nystrom = Uhat_k @ np.diag(S_k**2) @ Uhat_k.T
+    # Compute the low-rank approximation Uhat_k = Q * U_k
+    Uhat_k = Q @ U_k
 
-# Calculate error using nuclear norm
-error_nuc = np.linalg.norm(A - A_nystrom, ord='nuc') / nuc_norm_A(matrix_type, n, RR, p, sigma)
+    # Compute the low-rank approximation matrix A_nystrom
+    A_nystrom = Uhat_k @ np.diag(S_k**2) @ Uhat_k.T
 
-# Save results if needed
-if save_results:
-    save_results_to_csv(line_id, 1, cholesky_success, random_seed, error_nuc, time.time() - start_time)
-    add_counter(1)
+    # Calculate error using nuclear norm
+    error_nuc = np.linalg.norm(A - A_nystrom, ord='nuc') / nuc_norm_A(matrix_type, n, RR, p, sigma)
 
-print_results(error_nuc, time.time() - start_time, cholesky_success, random_seed)
+    # Save results if needed
+    if save_results:
+        save_results_to_csv(line_id, 1, cholesky_success, random_seed, error_nuc, time.time() - start_time)
+        add_counter(1)
+
+    print_results(error_nuc, time.time() - start_time, cholesky_success, random_seed)

@@ -1,9 +1,8 @@
 import numpy as np
-import pandas as pd
 import scipy.sparse as sp
 import bz2
 
-def synthetic_data( n, r, decay_rate, decay_type ) : 
+def synthetic_matrix( n, r, decay_rate, decay_type ) : 
     ones = np.ones(r)
     others = np.arange(1,n-r+1)
 
@@ -104,6 +103,21 @@ def rbf(data: np.ndarray, c: int, savepath: str = None):
         np.save(savepath, A)
     return A
 
+
+def MNIST_matrix( n:int, c:int=10 ):
+    mat = sp.load_npz('../data/mnist_train.npz')
+    #lab = np.load('../data/mnist_train_labels.npy')
+    #idx = np.where(lab == 0)[0]
+    #print(A[idx[0],idx[1]], A[idx[0],idx[1]+1])
+    return rbf( mat[:n,:].toarray(), c )
+    
+if __name__ == '__main__':
+    # memory (in GB) \approx 7.5 * n**2 / 1e9
+    # avoid n > 30000 (equivalent to \approx 7GB)
+    n = 1000
+
+
+'''
 def read_yearPredictionMSD(filename: str, size: int = 784, savepath: str = None):
     
     dataR = pd.read_csv(filename, sep=',', header=None)
@@ -123,37 +137,4 @@ def read_yearPredictionMSD(filename: str, size: int = 784, savepath: str = None)
     if savepath is not None:
         data.tofile('./denseData.csv', sep=',', format='%10.f')
         labels.tofile('./labels.csv', sep=',', format='%10.f')
-
-    return data, labels
-
-def generate_MNIST_matrix( n:int, c:int=10 ):
-    mat = sp.load_npz('../data/mnist_train.npz')
-    #lab = np.load('../data/mnist_train_labels.npy')
-    #idx = np.where(lab == 0)[0]
-    #print(A[idx[0],idx[1]], A[idx[0],idx[1]+1])
-    return rbf( mat[:n,:].toarray(), c )
-
-def generate_matrix(n: int, matrix_type: str, **kwargs):
-    if matrix_type == 'rbf':
-        data = kwargs.get('data')
-        if data is None:
-            raise ValueError("Data must be provided for RBF matrix generation.")
-        c = kwargs.get('c', 100)
-        return rbf(data, c)
-    #elif matrix_type == 'mnist':
-    #    filename = kwargs.get('filename', 'path_to_mnist.csv')
-    #    data, _ = read_mnist(filename)
-    #    c = kwargs.get('c', 100)
-    #    return rbf(data, c)
-    elif matrix_type == 'year_prediction':
-        filename = kwargs.get('filename', 'path_to_year_prediction.csv')
-        data, _ = read_yearPredictionMSD(filename)
-        c = kwargs.get('c', 100)
-        return rbf(data, c)
-    else:
-        raise ValueError(f"Unknown matrix type: {matrix_type}")
-    
-if __name__ == '__main__':
-    # memory (in GB) \approx 7.5 * n**2 / 1e9
-    # avoid n > 30000 (equivalent to \approx 7GB)
-    n = 1000
+'''

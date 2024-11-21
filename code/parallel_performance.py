@@ -1,4 +1,4 @@
-from main import gaussian_sketching, SRHT_sketching
+from parallel import gaussian_sketching, SRHT_sketching
 from sequential_performance import analysis
 from mpi4py import MPI
 import h5py

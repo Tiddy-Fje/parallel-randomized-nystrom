@@ -1,9 +1,8 @@
-from utils import synthetic_data
 import parallel_matrix as pm
 import numpy as np
 from mpi4py import MPI
 from scipy.linalg import solve_triangular, hadamard
-import data_generation as dg
+from data_generation import synthetic_matrix, MNIST_matrix
 import time
 
 def time_sketching( n, l, algorithm, seed_factor, comm, n_rep ):
@@ -34,10 +33,6 @@ def time_sketching( n, l, algorithm, seed_factor, comm, n_rep ):
         max_runtimes = np.max(tot_runtimes, axis=0) 
     return max_runtimes
 
-
-def sequential_gaussian_sketching( n, l, seed_factor ):
-    np.random.seed(seed_factor)
-    return np.random.randn(n, l) / np.sqrt(l)
 
 def gaussian_sketching( n, l, seed_factor, comm ):    
     rank = comm.Get_rank()
@@ -98,7 +93,6 @@ def SRHT_sketching( n, l, seed_factor, comm  ):
 
     return omega_i, omega_j_T.T
 
-
 def rank_k_approx(A_ij, n, l, k, sketching_func, seed_factor, comm ):
     ## What should be parallelized here ? ##
     # QR decompositions are n x l in complexity
@@ -154,12 +148,12 @@ if __name__ == '__main__':
     p = 2**8
     l = k + p
 
-#    mat = synthetic_data( n, r, 'slow', 'polynomial' )
-    mat = synthetic_data( n, r, 'fast', 'polynomial' )
-    #mat = synthetic_data( n, r, 'fast', 'exponential' )
+#    mat = synthetic_matrix( n, r, 'slow', 'polynomial' )
+    mat = synthetic_matrix( n, r, 'fast', 'polynomial' )
+    #mat = synthetic_matrix( n, r, 'fast', 'exponential' )
 
     c = 10
-    mat_bis = dg.generate_MNIST_matrix( n, c )
+    mat_bis = MNIST_matrix( n, c )
 
     mat_ij = pm.split_matrix( mat_bis, comm )
 
