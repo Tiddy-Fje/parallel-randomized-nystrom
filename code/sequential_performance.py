@@ -14,7 +14,7 @@ def analysis( n, l, algorithm, seed_factor, comm, n_rep, output_file ):
     if rank == 0:
         label = None
         if algorithm in [gaussian_sketching,sequential_gaussian_sketch]:
-            label = 'gaussian'
+            label = 'Gaussian'
         elif algorithm in [SRHT_sketching, block_SRHT, block_SRHT_bis]:
             label = 'SRHT'
         else:
@@ -29,6 +29,8 @@ def analysis( n, l, algorithm, seed_factor, comm, n_rep, output_file ):
             # if dataset already exists, skip the writing
             if f'{data_lab}_mean' in f[f'{label}{cores_lab}'].keys():
                 return
+            print(f'{label}{cores_lab}')
+            print(data_lab)
             f[f'{label}{cores_lab}'].create_dataset(f'{data_lab}_mean', data=np.mean(max_runtimes))
             f[f'{label}{cores_lab}'].create_dataset(f'{data_lab}_std', data=np.std(max_runtimes))
 
@@ -53,7 +55,7 @@ if __name__ == '__main__':
 
     output_file = '../output/sequential_performance'
     with h5py.File(f'{output_file}.h5', 'w') as f:
-        f.create_group('gaussian')
+        f.create_group('Gaussian')
         f.create_group('SRHT')
         f.create_group('parameters')
         f['parameters'].create_dataset('n_rep', data=n_rep)
@@ -65,16 +67,16 @@ if __name__ == '__main__':
 
 
     comm = MPI.COMM_WORLD    
-    for n in ns:
-        #analysis(n, l, sequential_gaussian_sketch, seed_factor, comm, n_rep, output_file)
-        analysis(n, l, block_SRHT, seed_factor, comm, n_rep, output_file)
-        analysis(n, l, block_SRHT_bis, seed_factor, comm, n_rep, output_file)
+    for n_ in ns:
+        analysis(n_, l, sequential_gaussian_sketch, seed_factor, comm, n_rep, output_file)
+        #analysis(n, l, block_SRHT, seed_factor, comm, n_rep, output_file)
+        analysis(n_, l, block_SRHT_bis, seed_factor, comm, n_rep, output_file)
     for l in ls:
-        #analysis(n, l, sequential_gaussian_sketch, seed_factor, comm, n_rep, output_file)
-        analysis(n, l, block_SRHT, seed_factor, comm, n_rep, output_file)
+        analysis(n, l, sequential_gaussian_sketch, seed_factor, comm, n_rep, output_file)
+        #analysis(n, l, block_SRHT, seed_factor, comm, n_rep, output_file)
         analysis(n, l, block_SRHT_bis, seed_factor, comm, n_rep, output_file)
 
     with h5py.File(f'{output_file}.h5', 'r') as f:
-        print(f['gaussian'].keys())
+        print(f['Gaussian'].keys())
         print(f['SRHT'].keys())
         
