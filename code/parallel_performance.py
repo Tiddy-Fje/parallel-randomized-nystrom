@@ -13,11 +13,11 @@ size = comm.Get_size()
 seed_factor = 1234
 n_rep = 3
 
-log2_n_small = 9
+log2_n_small = 8
 n_small = 2 ** log2_n_small
 l_small = 2 ** (log2_n_small-2)
 
-log2_n_large = 12
+log2_n_large = 11
 n_large = 2 ** log2_n_large
 l_large = 2 ** (log2_n_large-2)
 
@@ -35,13 +35,15 @@ if rank == 0:
             f['parameters'].create_dataset('l_small', data=l_small)
             f['parameters'].create_dataset('l_large', data=l_large)
 
-A = synthetic_matrix(n_small, n_small//4, 'fast', 'exponential')
-A_ij = split_matrix(A, comm)
+A_ij = synthetic_matrix(n_small, n_small//4, 'fast', 'exponential')
+if size > 1:
+    A_ij = split_matrix(A_ij, comm)
 analysis(A_ij, n_small, l_small, gaussian_sketching, seed_factor, comm, n_rep, output_file)
 analysis(A_ij, n_small, l_small, SRHT_sketching, seed_factor, comm, n_rep, output_file)
 
-B = synthetic_matrix(n_large, n_large//4, 'fast', 'exponential')
-B_ij = split_matrix(B, comm)
+B_ij = synthetic_matrix(n_large, n_large//4, 'fast', 'exponential')
+if size > 1:
+    B_ij = split_matrix(B_ij, comm)
 analysis(B_ij, n_large, l_large, gaussian_sketching, seed_factor, comm, n_rep, output_file)
 analysis(B_ij, n_large, l_large, SRHT_sketching, seed_factor, comm, n_rep, output_file)
 

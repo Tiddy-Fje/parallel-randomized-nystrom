@@ -5,6 +5,7 @@ from scipy.linalg import solve_triangular, hadamard
 from data_generation import synthetic_matrix, MNIST_matrix
 import time
 from utility import fwht_mat
+from sequential import sequential_gaussian_sketch, block_SRHT_bis
 from icecream import ic
 
 def time_sketching( A_ij, n, l, algorithm, seed_factor, comm, n_rep ):
@@ -14,10 +15,7 @@ def time_sketching( A_ij, n, l, algorithm, seed_factor, comm, n_rep ):
     runtimes = np.empty(n_rep)
     for  i in range(n_rep):
         start = time.perf_counter()
-        if size == 1:
-            B, C = algorithm( A_ij, n, l, seed_factor )
-        else:
-            B, C = algorithm( A_ij, n, l, seed_factor, comm ) 
+        B, C = algorithm( A_ij, n, l, seed_factor, comm ) 
         end = time.perf_counter()
         runtimes[i] = end - start
         comm.Barrier()
@@ -36,7 +34,9 @@ def time_sketching( A_ij, n, l, algorithm, seed_factor, comm, n_rep ):
     return max_runtimes
 
 
-def gaussian_sketching( A_ij, n, l, seed_factor, comm ):    
+def gaussian_sketching( A_ij, n, l, seed_factor, comm ): 
+    if comm.Get_size() == 1:
+        return sequential_gaussian_sketch( A_ij, n, l, seed_factor )
     rank = comm.Get_rank()
     root_blocks = pm.root_blocks_from_comm(comm)
 
@@ -61,6 +61,8 @@ def int_check( to_check ):
     return int(to_check)
 
 def SRHT_sketching( A_ij, n, l, seed_factor, comm  ):
+    if comm.Get_size() == 1:
+        return block_SRHT_bis( A_ij, n, l, seed_factor )
     root_blocks = pm.root_blocks_from_comm(comm)
     n_over_root_p = int_check( n / root_blocks )
     
