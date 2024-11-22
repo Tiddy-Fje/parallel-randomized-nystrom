@@ -1,9 +1,13 @@
 import numpy as np
-import scipy.sparse as sp
-import bz2
+from scipy.linalg import hadamard
+from sympy.discrete import fwht
+import time
+import matplotlib.pyplot as plt
 
-# load the sparse matrix from disk
-#sparse_matrix = sp.load_npz('../data/mnist.npz')
+vec = np.array([1,2,3,4,5,6,7,8]).reshape(2,4)
+print(vec.flags)
+v = vec.T
+print(v.flags)
 
 '''
 

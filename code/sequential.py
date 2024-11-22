@@ -9,10 +9,13 @@ from data_generation import *
 from utility import *
 
 
-def sequential_gaussian_sketch(n, l, seed_factor):
+def sequential_gaussian_sketch( A, n, l, seed_factor):
     """Generate Gaussian sketching matrix."""
     rng = np.random.default_rng(seed_factor)
-    return rng.normal(size=(n, l)) # / np.sqrt(l)  # FIGURE OUT IF NORMALIZATION IS NEEDED
+    omega = rng.normal(size=(n, l)) # / np.sqrt(l)  # FIGURE OUT IF NORMALIZATION IS NEEDED
+    C = A @ omega
+    B = omega.T @ C
+    return B, C
 
 def SRHT_sketch(n, l, random_seed):
     """Generate a Subsampled Randomized Hadamard Transform (SRHT) sketching matrix."""
@@ -48,20 +51,25 @@ def block_SRHT(n, l, random_seed):
         lambda i, j: signsRows[i] * signsCols[j] * (-1) ** (bin(i & randCol[j]).count("1"))
     ), (n, l), dtype=int) / math.sqrt(l)
 
-def block_SRHT_bis(n, l, random_seed):
+def block_SRHT_bis( A, n, l, random_seed):
     """Generate a block Subsampled Randomized Hadamard Transform (SRHT) sketching matrix."""
     np.random.seed(random_seed)
-    H = hadamard(n) / np.sqrt( n )
     rows = np.concatenate( (np.ones(l), np.zeros(n-l)) ).astype(bool)
     perm = np.random.permutation(n)
     selected_rows = rows[perm]
-    RH = H[selected_rows,:]
 
-    factor = np.sqrt( n / l )
+    def omega_at_A( A_, D_L, D_R ):# this got checked
+        temp =  D_R.reshape(-1,1) * A_
+        fwht_mat( temp )
+        R_temp = temp[selected_rows,:] / np.sqrt( n )
+        # we normalise as should use normalised hadamard matrix
+        return np.sqrt( n / l ) * D_L.reshape(-1,1) * R_temp
+    
     D_L = np.random.choice([-1, 1], size=l, replace=True, p=[0.5, 0.5])
     D_R = np.random.choice([-1, 1], size=n, replace=True, p=[0.5, 0.5])
-    omega = factor * D_L.reshape(-1,1) * RH
-    return ( D_R.reshape(-1,1) * omega.T ).T
+    C = omega_at_A( A.T, D_L, D_R ).T
+    B = omega_at_A( C, D_L, D_R )
+    return B, C
 
 if __name__ == "__main__":
     # Retrieve settings from a CSV file

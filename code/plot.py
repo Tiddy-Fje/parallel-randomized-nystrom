@@ -8,7 +8,7 @@ plt.rcParams.update({'font.size': 14})
 plt.rcParams.update({'lines.linewidth': 2, 'lines.markersize': 10})
 plt.rcParams.update({'figure.autolayout': True})
 
-def h5_to_dict(h5_group):# Chat gpt output
+def h5_to_dict(h5_group): # This function is Chat gpt output
     """
     Recursively convert an h5py group or file into a nested dictionary.
     """

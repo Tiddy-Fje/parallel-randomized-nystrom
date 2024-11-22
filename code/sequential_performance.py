@@ -3,11 +3,12 @@ from sequential import sequential_gaussian_sketch, block_SRHT, block_SRHT_bis
 import numpy as np
 from mpi4py import MPI
 import h5py
+from data_generation import synthetic_matrix
 
 # TO DO : SEQUENTIAL SRHT SKETCHING FUNCTION SLOWER THAN ALTERNATIVE (TALK W/ AMAL)
 
-def analysis( n, l, algorithm, seed_factor, comm, n_rep, output_file ):
-    max_runtimes = time_sketching(n, l, algorithm, seed_factor, comm, n_rep) 
+def analysis( A_ij, n, l, algorithm, seed_factor, comm, n_rep, output_file ):
+    max_runtimes = time_sketching( A_ij, n, l, algorithm, seed_factor, comm, n_rep) 
 
     rank = comm.Get_rank()
     size = comm.Get_size()
@@ -29,11 +30,10 @@ def analysis( n, l, algorithm, seed_factor, comm, n_rep, output_file ):
             # if dataset already exists, skip the writing
             if f'{data_lab}_mean' in f[f'{label}{cores_lab}'].keys():
                 return
-            print(f'{label}{cores_lab}')
-            print(data_lab)
+            #print(f'{label}{cores_lab}')
+            #print(data_lab)
             f[f'{label}{cores_lab}'].create_dataset(f'{data_lab}_mean', data=np.mean(max_runtimes))
             f[f'{label}{cores_lab}'].create_dataset(f'{data_lab}_std', data=np.std(max_runtimes))
-
     return
 
 if __name__ == '__main__':
@@ -46,7 +46,7 @@ if __name__ == '__main__':
     n = 2 ** (log2_l_max+1)
 
     log2_n_min = 10
-    log2_n_max = 13
+    log2_n_max = 12
     log2_ns = np.arange(log2_n_min, log2_n_max+1).astype(int)
     ns = 2 ** log2_ns
     l = 2 ** (log2_n_min-1)
@@ -66,15 +66,17 @@ if __name__ == '__main__':
         f['parameters'].create_dataset('ns', data=ns)
 
 
-    comm = MPI.COMM_WORLD    
+    comm = MPI.COMM_WORLD  
     for n_ in ns:
-        analysis(n_, l, sequential_gaussian_sketch, seed_factor, comm, n_rep, output_file)
+        A = synthetic_matrix(n_, n_//4, 'fast', 'exponential')
+        analysis(A, n_, l, sequential_gaussian_sketch, seed_factor, comm, n_rep, output_file)
         #analysis(n, l, block_SRHT, seed_factor, comm, n_rep, output_file)
-        analysis(n_, l, block_SRHT_bis, seed_factor, comm, n_rep, output_file)
+        analysis(A, n_, l, block_SRHT_bis, seed_factor, comm, n_rep, output_file)
+    A = synthetic_matrix(n, n//4, 'fast', 'exponential') 
     for l in ls:
-        analysis(n, l, sequential_gaussian_sketch, seed_factor, comm, n_rep, output_file)
+        analysis(A, n, l, sequential_gaussian_sketch, seed_factor, comm, n_rep, output_file)
         #analysis(n, l, block_SRHT, seed_factor, comm, n_rep, output_file)
-        analysis(n, l, block_SRHT_bis, seed_factor, comm, n_rep, output_file)
+        analysis(A, n, l, block_SRHT_bis, seed_factor, comm, n_rep, output_file)
 
     with h5py.File(f'{output_file}.h5', 'r') as f:
         print(f['Gaussian'].keys())

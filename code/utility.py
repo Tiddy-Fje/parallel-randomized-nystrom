@@ -1,6 +1,25 @@
 import numpy as np
 import csv
 import datetime
+from icecream import install, ic # IceCream is a library that makes print debugging easy. It's a single function that logs a variable and its value to the console. It's a great alternative to print debugging. You can find a quick start and a full tutorial on https://github.com/gruns/icecream
+
+
+def fwht_mat(A, copy=False): # adapted from wikipedia page
+    '''Apply hadamard matrix using in-place Fast Walsh–Hadamard Transform.'''
+    h = 1
+    m1 = A.shape[0]
+    if copy:
+        A = np.copy(A)
+    while h < m1:
+        # perform FWHT
+        for i in range(0, m1, h * 2):
+            for j in range(i, i + h):
+                A[j,:], A[j + h,:] = A[j,:] + A[j + h,:], A[j,:] - A[j + h,:]
+        # normalize and increment
+        #A /= np.sqrt(2)
+        h *= 2
+    if copy:
+        return A
 
 def get_counter(name="default"):
     return np.load("../data/utilities/counter_" + name + ".npy")

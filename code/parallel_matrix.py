@@ -1,5 +1,6 @@
 import numpy as np
 from mpi4py import MPI
+from icecream import ic
 
 def root_blocks_from_comm( comm ):
     '''
@@ -103,14 +104,26 @@ def multiply( A_ij, B_i_T, B_j, n, l, comm, only_C=False ):
     comm is the MPI communicator.
     only_C is a flag to indicate if only the C matrix has to be computed. In this case B_i_T is not used.
     '''
-    rank = comm.Get_rank()
-    root_blocks = root_blocks_from_comm(comm)
-
     C_ij = A_ij @ B_j
     B_ij = None
     if not only_C:
         B_ij = B_i_T @ C_ij
 
+    return assemble_B_C( C_ij, B_ij, n, l, comm, only_C )
+    
+def assemble_B_C( C_ij, B_ij, n, l, comm, only_C=False ):
+    '''
+    Assemble the B and C matrices from the local blocks.
+    C_ij is the local block of C matrix.
+    B_ij is the local block of B matrix.
+    n is the number of rows of the global A matrix.
+    l is the number of columns of the global A matrix.
+    comm is the MPI communicator.
+    only_C is a flag to indicate if only the C matrix has to be computed. In this case B_ij is not used.
+    '''
+    rank = comm.Get_rank()
+    root_blocks = root_blocks_from_comm(comm)
+    
     ## Found splitting syntax asking GPT (from this line to ##)
     color_row = rank // root_blocks
     color_col = rank % root_blocks
@@ -131,8 +144,11 @@ def multiply( A_ij, B_i_T, B_j, n, l, comm, only_C=False ):
         B = np.empty_like(B_ij)
 
     if color_col == 0:
+        # making sure arrays are C_CONTIGUOUS and not F_CONTIGUOUS
+        C_i = np.ascontiguousarray(C_i)
         comm_col.Gather(C_i, C, root=0)
 
     if not only_C:
         comm.Reduce(B_ij, B, op=MPI.SUM, root=0)
+
     return B, C

@@ -4,8 +4,10 @@ from mpi4py import MPI
 from scipy.linalg import solve_triangular, hadamard
 from data_generation import synthetic_matrix, MNIST_matrix
 import time
+from utility import fwht_mat
+from icecream import ic
 
-def time_sketching( n, l, algorithm, seed_factor, comm, n_rep ):
+def time_sketching( A_ij, n, l, algorithm, seed_factor, comm, n_rep ):
     rank = comm.Get_rank()
     size = comm.Get_size() 
 
@@ -13,9 +15,9 @@ def time_sketching( n, l, algorithm, seed_factor, comm, n_rep ):
     for  i in range(n_rep):
         start = time.perf_counter()
         if size == 1:
-            omega = algorithm(n, l, seed_factor)
+            B, C = algorithm( A_ij, n, l, seed_factor )
         else:
-            omega_T, omega = algorithm(n, l, seed_factor, comm)
+            B, C = algorithm( A_ij, n, l, seed_factor, comm ) 
         end = time.perf_counter()
         runtimes[i] = end - start
         comm.Barrier()
@@ -34,7 +36,7 @@ def time_sketching( n, l, algorithm, seed_factor, comm, n_rep ):
     return max_runtimes
 
 
-def gaussian_sketching( n, l, seed_factor, comm ):    
+def gaussian_sketching( A_ij, n, l, seed_factor, comm ):    
     rank = comm.Get_rank()
     root_blocks = pm.root_blocks_from_comm(comm)
 
@@ -50,55 +52,54 @@ def gaussian_sketching( n, l, seed_factor, comm ):
     i = rank // root_blocks
     j = rank % root_blocks
     omega_j = get_omega_k(j)
-    
-    if i == j :
-        return omega_j.T, omega_j
-    
     omega_i = get_omega_k(i)
-    return omega_i.T, omega_j
+   
+    return pm.multiply( A_ij, omega_i.T, omega_j, n, l, comm )
 
 def int_check( to_check ):
-    assert to_check.is_integer(), "Value is not an integer"
+    assert to_check.is_integer(), 'Value is not an integer'
     return int(to_check)
 
-def SRHT_sketching( n, l, seed_factor, comm  ):
-    rank = comm.Get_rank()
+def SRHT_sketching( A_ij, n, l, seed_factor, comm  ):
     root_blocks = pm.root_blocks_from_comm(comm)
-
     n_over_root_p = int_check( n / root_blocks )
-    H = hadamard(n_over_root_p) / np.sqrt( n_over_root_p )
-    np.random.seed(seed_factor*(root_blocks+2)) # to avoid seed overlap
-    assert n_over_root_p >= l, f"l={l} should be smaller than n/sqrt(p)={n_over_root_p}"
-    rows = np.concatenate( (np.ones(l), np.zeros(n_over_root_p-l)) ).astype(bool)
-    perm = np.random.permutation(n_over_root_p)
-    selected_rows = rows[perm]
-    RH = H[selected_rows,:]
-
-    def get_omega_k( k ):
+    
+    def get_samples_for_k( k ):
         np.random.seed(seed_factor*(k+1))
-        factor = np.sqrt( n / (root_blocks*l) )
         D_Lk = np.random.choice([-1, 1], size=l, replace=True, p=[0.5, 0.5])
         D_Rk = np.random.choice([-1, 1], size=n_over_root_p, replace=True, p=[0.5, 0.5])
-        omega_k = factor * D_Lk.reshape(-1,1) * RH
-        return ( D_Rk.reshape(-1,1) * omega_k.T ).T
+        return D_Lk, D_Rk
     
+    assert n_over_root_p >= l, f'l={l} should be < n/sqrt(p)={n_over_root_p}'
+    rows = np.concatenate( (np.ones(l), np.zeros(n_over_root_p-l)) ).astype(bool)
+    np.random.seed( seed_factor*(root_blocks+2) ) # to avoid seed overlap
+    perm = np.random.permutation(n_over_root_p)
+    selected_rows = rows[perm]    
+
+    def omega_k_at_A_ks( A_ks, D_Lk, D_Rk ):# this got checked
+        temp =  D_Rk.reshape(-1,1) * A_ks
+        fwht_mat( temp )
+        R_temp = temp[selected_rows,:] / np.sqrt( n_over_root_p )
+        # we normalise as should use normalised hadamard matrix
+        return np.sqrt( n / (root_blocks*l) ) * D_Lk.reshape(-1,1) * R_temp
+
+    rank = comm.Get_rank()
     i = rank // root_blocks
     j = rank % root_blocks
-    omega_j_T = get_omega_k(j)
     
-    if i == j :
-        return omega_j_T, omega_j_T.T
+    D_Li, D_Ri = get_samples_for_k( i ) 
+    D_Lj, D_Rj = get_samples_for_k( j )
+
+    C_ij = omega_k_at_A_ks( A_ij.T, D_Lj, D_Rj ).T
+    B_ij = omega_k_at_A_ks( C_ij, D_Li, D_Ri )
     
-    omega_i = get_omega_k(i)
+    return pm.assemble_B_C( C_ij, B_ij, n, l, comm, only_C=False )   
 
-    return omega_i, omega_j_T.T
 
-def rank_k_approx(A_ij, n, l, k, sketching_func, seed_factor, comm ):
+def rank_k_approx( B, C, n, k, comm ):
     ## What should be parallelized here ? ##
     # QR decompositions are n x l in complexity
     # SVD and EIG are l^3 in complexity
-    B_i_T, B_j = sketching_func( n, l, seed_factor, comm )
-    B, C = pm.multiply( A_ij, B_i_T, B_j, n, l, comm )
 
     A_k = None
     U_hat = None
@@ -136,6 +137,7 @@ def rank_k_approx(A_ij, n, l, k, sketching_func, seed_factor, comm ):
     return A_k
 
 
+
 if __name__ == '__main__':
 
     seed_factor = 1234
@@ -149,16 +151,17 @@ if __name__ == '__main__':
     l = k + p
 
 #    mat = synthetic_matrix( n, r, 'slow', 'polynomial' )
-    mat = synthetic_matrix( n, r, 'fast', 'polynomial' )
-    #mat = synthetic_matrix( n, r, 'fast', 'exponential' )
+    #mat = synthetic_matrix( n, r, 'fast', 'polynomial' )
+    mat = synthetic_matrix( n, r, 'fast', 'exponential' )
 
     c = 10
-    mat_bis = MNIST_matrix( n, c )
 
+    mat_bis = MNIST_matrix( n, c )
     mat_ij = pm.split_matrix( mat_bis, comm )
 
     #sketching_func = gaussian_sketching
     sketching_func = SRHT_sketching
-    mat_k = rank_k_approx( mat_ij, n, l, k, sketching_func, seed_factor, comm )
+    B, C = sketching_func( mat_ij, n, l, seed_factor, comm )
+    mat_k = rank_k_approx( B, C, n, k, comm )
     if rank == 0:
         print('Frobenius norm of the error: ', np.linalg.norm(mat_bis - mat_k, 'fro') / np.linalg.norm(mat_bis, 'fro'))
