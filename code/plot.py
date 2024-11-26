@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as sp
 from matplotlib import pyplot as plt
 import h5py
+import data_generation as dg
 
 # fix rcParams for plotting
 plt.rcParams.update({'font.size': 14})
@@ -122,8 +123,35 @@ def cores_variation( par_data_dict, ns_cores ):
     plt.savefig('../figures/runtimes_cores_variation.png')
     return
 
+def plot_synthetic_spectra( n, r ):
+    '''
+    Plot the spectra of the synthetic_matrix(n,r,decay_rate,decay_type) for different decay rates and types.
+    '''
+    decay_rates = ['fast', 'medium', 'slow']
+    color = ['tab:red', 'tab:orange', 'tab:green']
+    decay_types = ['exponential', 'polynomial']
+    markers = ['o', 's']
+    # create colors increasing in lightness as decay rate increases
+    # should use the matplotlib colormaps for this
+
+    fig, ax = plt.subplots()
+    for i,decay_rate in enumerate(decay_rates):
+        for j, decay_type in enumerate(decay_types):
+            A = dg.synthetic_matrix(n, r, decay_rate, decay_type)
+            eigs = np.diag(A)
+            ax.plot(np.arange(n), eigs, label=f'{decay_type}, {decay_rate}', color=color[i], \
+                    marker=markers[j], linestyle='-', markersize=5)
+    ax.set_xlabel('Index')
+    ax.set_ylabel('Eigenvalue')
+    ax.legend()
+    plt.savefig('../figures/synthetic_spectra.png')
+    return
+
+
+
 if __name__ == '__main__':
-    seq_data_dict, par_data_dict = import_data()
-    l_variation( seq_data_dict )
-    n_variation( seq_data_dict )
-    cores_variation( par_data_dict, [4] )
+    plot_synthetic_spectra( 30+5, 5 )
+    #seq_data_dict, par_data_dict = import_data()
+    #l_variation( seq_data_dict )
+    #n_variation( seq_data_dict )
+    #cores_variation( par_data_dict, [4] )

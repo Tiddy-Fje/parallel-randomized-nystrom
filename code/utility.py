@@ -11,12 +11,9 @@ def fwht_mat(A, copy=False): # adapted from wikipedia page
     if copy:
         A = np.copy(A)
     while h < m1:
-        # perform FWHT
         for i in range(0, m1, h * 2):
             for j in range(i, i + h):
                 A[j,:], A[j + h,:] = A[j,:] + A[j + h,:], A[j,:] - A[j + h,:]
-        # normalize and increment
-        #A /= np.sqrt(2)
         h *= 2
     if copy:
         return A
