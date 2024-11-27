@@ -5,7 +5,7 @@ import time
 import matplotlib.pyplot as plt
 from cProfile import Profile
 
-profile = False
+profile = True
 if profile:
     # profile the execution of block_SRHT_bis for n=2**10
     n = 2**11

@@ -4,7 +4,7 @@ import datetime
 #from icecream import install, ic # IceCream is a library that makes print debugging easy. It's a single function that logs a variable and its value to the console. It's a great alternative to print debugging. You can find a quick start and a full tutorial on https://github.com/gruns/icecream
 
 
-def fwht_mat(A, copy=False): # adapted from wikipedia page
+def fwht_mat(A, copy=False): # adapted from wikipedia page with help of GPT
     '''Apply hadamard matrix using in-place Fast Walsh–Hadamard Transform.'''
     h = 1
     m1 = A.shape[0]
@@ -12,8 +12,10 @@ def fwht_mat(A, copy=False): # adapted from wikipedia page
         A = np.copy(A)
     while h < m1:
         for i in range(0, m1, h * 2):
-            for j in range(i, i + h):
-                A[j,:], A[j + h,:] = A[j,:] + A[j + h,:], A[j,:] - A[j + h,:]
+            # Save a copy of the upper rows
+            # Perform addition for the upper rows
+            A[i:i+h, :], A[i+h:i+2*h, :] = A[i:i+h, :] + A[i+h:i+2*h, :], A[i:i+h, :] - A[i+h:i+2*h, :]
+            # this is done to skip the loop (2-3x faster)
         h *= 2
     if copy:
         return A
