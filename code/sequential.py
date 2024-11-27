@@ -9,9 +9,10 @@ from data_generation import *
 from utility import *
 
 def half_numpy_prod( A, Omega ):
+#    print(A.shape, Omega.shape)
     C = np.zeros((A.shape[0], Omega.shape[1]))
     for i in range(A.shape[0]):
-        C[i,:] = A @ Omega[:,i]
+        C[i,:] = A[i,:] @ Omega
     return C
 
 def sequential_gaussian_sketch( A, n, l, seed_factor, half_numpy=True ):
