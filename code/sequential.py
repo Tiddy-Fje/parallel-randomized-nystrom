@@ -8,13 +8,22 @@ from scipy.linalg import cholesky, qr, svd, solve_triangular, hadamard
 from data_generation import *
 from utility import *
 
+def half_numpy_prod( A, Omega ):
+    C = np.zeros((A.shape[0], Omega.shape[1]))
+    for i in range(A.shape[0]):
+        C[i,:] = A @ Omega[:,i]
+    return C
 
-def sequential_gaussian_sketch( A, n, l, seed_factor):
+def sequential_gaussian_sketch( A, n, l, seed_factor, half_numpy=True ):
     """Generate Gaussian sketching matrix."""
     rng = np.random.default_rng(seed_factor)
     omega = rng.normal(size=(n, l)) # / np.sqrt(l)  # FIGURE OUT IF NORMALIZATION IS NEEDED
-    C = A @ omega
-    B = omega.T @ C
+    if not half_numpy:
+        C = A @ omega
+        B = omega.T @ C
+        return B, C
+    C = half_numpy_prod( A, omega )
+    B = half_numpy_prod( omega.T, C )
     return B, C
 
 def SRHT_sketch(n, l, random_seed):
