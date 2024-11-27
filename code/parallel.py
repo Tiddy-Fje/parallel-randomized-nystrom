@@ -6,7 +6,7 @@ from data_generation import synthetic_matrix, MNIST_matrix
 import time
 from utility import fwht_mat
 from sequential import sequential_gaussian_sketch, block_SRHT_bis
-from icecream import ic
+#from icecream import ic
 
 def time_sketching( A_ij, n, l, algorithm, seed_factor, comm, n_rep ):
     rank = comm.Get_rank()

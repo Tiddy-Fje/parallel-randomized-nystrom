@@ -13,11 +13,11 @@ size = comm.Get_size()
 seed_factor = 1234
 n_rep = 3
 
-log2_n_small = 8
+log2_n_small = 10
 n_small = 2 ** log2_n_small
 l_small = 2 ** (log2_n_small-2)
 
-log2_n_large = 11
+log2_n_large = 14
 n_large = 2 ** log2_n_large
 l_large = 2 ** (log2_n_large-2)
 

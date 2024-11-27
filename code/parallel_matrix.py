@@ -1,6 +1,6 @@
 import numpy as np
 from mpi4py import MPI
-from icecream import ic
+#from icecream import ic
 
 def root_blocks_from_comm( comm ):
     '''

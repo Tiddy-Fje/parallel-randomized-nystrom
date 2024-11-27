@@ -1,0 +1,4 @@
+#!/bin/bash -l
+
+module load gcc openmpi python py-mpi4py py-h5py
+srun python test.py

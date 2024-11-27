@@ -1,7 +1,7 @@
 import numpy as np
 import csv
 import datetime
-from icecream import install, ic # IceCream is a library that makes print debugging easy. It's a single function that logs a variable and its value to the console. It's a great alternative to print debugging. You can find a quick start and a full tutorial on https://github.com/gruns/icecream
+#from icecream import install, ic # IceCream is a library that makes print debugging easy. It's a single function that logs a variable and its value to the console. It's a great alternative to print debugging. You can find a quick start and a full tutorial on https://github.com/gruns/icecream
 
 
 def fwht_mat(A, copy=False): # adapted from wikipedia page

@@ -1,12 +1,12 @@
 #!/bin/bash -l
 
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=4
-#SBATCH --cpus-per-task=1
-#SBATCH --time=20:00
-#SBATCH --account=math-505
-#SBATCH --qos=serial
-#SBATCH --output=../logs/performance_analysis/4_procs.log
+#SBATCH --nodes 1
+#SBATCH --ntasks-per-node 4
+#SBATCH --cpus-per-task 1
+#SBATCH --qos serial
+#SBATCH --time 20:00
+#SBATCH --account math-505
+#SBATCH --output ../logs/performance_analysis/4_procs.log
 
 module load gcc openmpi python py-mpi4py py-h5py
 srun python parallel_performance.py
