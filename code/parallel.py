@@ -15,7 +15,10 @@ def time_sketching( A_ij, n, l, algorithm, seed_factor, comm, n_rep ):
     runtimes = np.empty(n_rep)
     for  i in range(n_rep):
         start = time.perf_counter()
-        B, C = algorithm( A_ij, n, l, seed_factor, comm ) 
+        if size == 1:
+            B, C = algorithm( A_ij, n, l, seed_factor )
+        else:
+            B, C = algorithm( A_ij, n, l, seed_factor, comm ) 
         end = time.perf_counter()
         runtimes[i] = end - start
         comm.Barrier()
