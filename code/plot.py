@@ -150,8 +150,8 @@ def plot_synthetic_spectra( n, r ):
 
 
 if __name__ == '__main__':
-    plot_synthetic_spectra( 30+5, 5 )
-    #seq_data_dict, par_data_dict = import_data()
-    #l_variation( seq_data_dict )
-    #n_variation( seq_data_dict )
+    #plot_synthetic_spectra( 30+5, 5 )
+    seq_data_dict, par_data_dict = import_data()
+    l_variation( seq_data_dict )
+    n_variation( seq_data_dict )
     #cores_variation( par_data_dict, [4] )
