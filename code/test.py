@@ -5,7 +5,7 @@ import time
 import matplotlib.pyplot as plt
 from cProfile import Profile
 
-profile = True
+profile = False
 if profile:
     # profile the execution of block_SRHT_bis for n=2**10
     n = 2**11
@@ -20,49 +20,20 @@ if profile:
     # print the profile results
     profile.print_stats()
 else:
-    def fwht_mat(A, copy=False): # adapted from wikipedia page
-        #Apply hadamard matrix using in-place Fast Walsh–Hadamard Transform.
-        h = 1
-        m1 = A.shape[0]
-        if copy:
-            A = np.copy(A)
-        while h < m1:
-            for i in range(0, m1, h * 2):
-                for j in range(i, i + h):
-                    A[j,:], A[j + h,:] = A[j,:] + A[j + h,:], A[j,:] - A[j + h,:]
-            h *= 2
-        if copy:
-            return A
 
-    def fwht_mat_bis(A, copy=False): 
-        # Apply Hadamard matrix using in-place Fast Walsh–Hadamard Transform.
-        if copy:
-            A = np.copy(A)
-        h = 1
-        m1 = A.shape[0]
-        while h < m1:
-            for i in range(0, m1, h * 2):
-                # Save a copy of the upper rows
-                #upper = A[i:i+h, :].copy()
-                # Perform addition for the upper rows
-                #A[i:i+h, :], A[i+h:i+2*h, :] = upper + A[i+h:i+2*h, :], upper - A[i+h:i+2*h, :] 
-
-                # Perform addition for the upper rows
-                A[i:i+h, :], A[i+h:i+2*h, :] = A[i:i+h, :] + A[i+h:i+2*h, :], A[i:i+h, :] - A[i+h:i+2*h, :]
-            h *= 2
-        if copy:
-            return A
-
-
-
-    ns = [2**i for i in range(6, 13)]
+    l = 2**8
+    seed_factor = 42
+    ns = np.geomspace(2**9, 1.3*2**13, num=7, dtype=int)
+#    ns = [2**i for i in range(8, 13)]
     times = []
     times_ = []
     times__ = []
     for n in ns:
         A = np.random.randn(n,n)
         start = time.time()
-        B=fwht_mat(A, copy=True)
+        B, C = sequential_gaussian_sketch( A, n, l, seed_factor )
+        #B, C = block_SRHT_bis( A, n, l, seed_factor )
+
         end = time.time()
         times.append(end-start)
         #H = hadamard(n) / np.sqrt( n )
@@ -70,18 +41,21 @@ else:
         #C = H @ A
         #end = time.time()
         #times_.append(end-start)
-        start = time.time()
-        B__=fwht_mat_bis(A, copy=True)
-        end = time.time()
-        times__.append(end-start)
-        assert np.allclose(B, B__), 'Bs not equal'
+       # start = time.time()
+       # B__=fwht_mat_bis(A, copy=True)
+       # end = time.time()
+        #times__.append(end-start)
+       # assert np.allclose(B, B__), 'Bs not equal'
         #print(B[:5,:5], '\n', B__[:5,:5])
 
     fig, ax = plt.subplots()
-    ax.plot(ns, times, label='FWHT')
+    ax.plot(ns, times, label='FWHT', marker='o')
+    print('Slope', np.polyfit(np.log(ns[2:]), np.log(times[2:]), 1)[0])
     #ax.plot(ns, times_, label='Hadamard')
-    ax.plot(ns, times__, label='FWHT bis')
+#    ax.plot(ns, times__, label='FWHT bis')
     ax.set_xlabel('n')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
     ax.set_ylabel('Runtime [s]')
     ax.legend()
     plt.show()
