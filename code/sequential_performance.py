@@ -37,19 +37,19 @@ def analysis( A_ij, n, l, algorithm, seed_factor, comm, n_rep, output_file ):
     return
 
 if __name__ == '__main__':
-    n_rep = 3
+    n_rep = 2
 
-    log2_l_min = 8
-    log2_l_max = 10
+    log2_l_min = 10
+    log2_l_max = 12
     log2_ls = np.arange(log2_l_min, log2_l_max+1).astype(int)
     ls = 2 ** log2_ls
     n = 2 ** (log2_l_max+1)
 
     log2_n_min = 10
-    log2_n_max = 12
+    log2_n_max = 11
     log2_ns = np.arange(log2_n_min, log2_n_max+1).astype(int)
     ns = 2 ** log2_ns
-    l = 2 ** (log2_n_min-1)
+    l = 2 ** (log2_n_min)
 
     seed_factor = 1234
 
@@ -68,17 +68,18 @@ if __name__ == '__main__':
 
     comm = MPI.COMM_WORLD  
     for n_ in ns:
-        A = synthetic_matrix(n_, n_//4, 'fast', 'exponential')
+        A = np.random.normal(size=(n_, n_))    #A = synthetic_matrix(n_, n_//4, 'fast', 'exponential')
         analysis(A, n_, l, sequential_gaussian_sketch, seed_factor, comm, n_rep, output_file)
         #analysis(n, l, block_SRHT, seed_factor, comm, n_rep, output_file)
         analysis(A, n_, l, block_SRHT_bis, seed_factor, comm, n_rep, output_file)
-    A = synthetic_matrix(n, n//4, 'fast', 'exponential') 
+    #A = synthetic_matrix(n, n//4, 'fast', 'exponential') 
+    A = np.random.normal(size=(n, n))
     for l in ls:
         analysis(A, n, l, sequential_gaussian_sketch, seed_factor, comm, n_rep, output_file)
         #analysis(n, l, block_SRHT, seed_factor, comm, n_rep, output_file)
         analysis(A, n, l, block_SRHT_bis, seed_factor, comm, n_rep, output_file)
 
-    with h5py.File(f'{output_file}.h5', 'r') as f:
-        print(f['Gaussian'].keys())
-        print(f['SRHT'].keys())
+#  with h5py.File(f'{output_file}.h5', 'r') as f:
+#       print(f['Gaussian'].keys())
+#        print(f['SRHT'].keys())
         
