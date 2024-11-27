@@ -11,4 +11,5 @@
 echo 'Started at ' `date`
 module load gcc openmpi python py-mpi4py py-h5py
 srun python sequential_performance.py
+#mpiexec -n 1 sequential_performance.py
 echo 'Ended at ' `date`
