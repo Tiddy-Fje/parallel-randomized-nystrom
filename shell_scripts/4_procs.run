@@ -8,5 +8,7 @@
 #SBATCH --qos=serial
 #SBATCH --output=../logs/4_procs.log
 
+echo 'Started at ' `date`
 module load gcc openmpi python py-mpi4py py-h5py
 srun python main.py
+echo 'Ended at ' `date`

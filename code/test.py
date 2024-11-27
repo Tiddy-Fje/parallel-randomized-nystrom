@@ -4,10 +4,43 @@ from sympy.discrete import fwht
 import time
 import matplotlib.pyplot as plt
 
-vec = np.array([1,2,3,4,5,6,7,8]).reshape(2,4)
-print(vec.flags)
-v = vec.T
-print(v.flags)
+def fwht_mat(A, copy=False): # adapted from wikipedia page
+    '''Apply hadamard matrix using in-place Fast Walsh–Hadamard Transform.'''
+    h = 1
+    m1 = A.shape[0]
+    if copy:
+        A = np.copy(A)
+    while h < m1:
+        for i in range(0, m1, h * 2):
+            for j in range(i, i + h):
+                A[j,:], A[j + h,:] = A[j,:] + A[j + h,:], A[j,:] - A[j + h,:]
+        h *= 2
+    if copy:
+        return A
+    
+ns = [2**i for i in range(6, 13)]
+times = []
+times_ = []
+for n in ns:
+    A = np.random.randn(n,n)
+    H = hadamard(n) / np.sqrt( n )
+    start = time.time()
+    fwht_mat(A)
+    end = time.time()
+    times.append(end-start)
+    start = time.time()
+    C = H @ A
+    end = time.time()
+    times_.append(end-start)
+
+fig, ax = plt.subplots()
+ax.plot(ns, times, label='FWHT')
+ax.plot(ns, times_, label='Hadamard')
+ax.set_xlabel('n')
+ax.set_ylabel('Runtime [s]')
+ax.legend()
+plt.show()
+
 
 '''
 

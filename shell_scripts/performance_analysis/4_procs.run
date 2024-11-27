@@ -8,5 +8,7 @@
 #SBATCH --account math-505
 #SBATCH --output ../logs/performance_analysis/4_procs.log
 
+echo 'Started at ' `date`
 module load gcc openmpi python py-mpi4py py-h5py
 srun python parallel_performance.py
+echo 'Ended at ' `date`
