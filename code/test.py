@@ -43,23 +43,26 @@ else:
         while h < m1:
             for i in range(0, m1, h * 2):
                 # Save a copy of the upper rows
-                upper = A[i:i+h, :].copy()
+                #upper = A[i:i+h, :].copy()
                 # Perform addition for the upper rows
-                A[i:i+h, :], A[i+h:i+2*h, :] = upper + A[i+h:i+2*h, :], upper - A[i+h:i+2*h, :] 
+                #A[i:i+h, :], A[i+h:i+2*h, :] = upper + A[i+h:i+2*h, :], upper - A[i+h:i+2*h, :] 
+
+                # Perform addition for the upper rows
+                A[i:i+h, :], A[i+h:i+2*h, :] = A[i:i+h, :] + A[i+h:i+2*h, :], A[i:i+h, :] - A[i+h:i+2*h, :]
             h *= 2
         if copy:
             return A
 
 
 
-    ns = [2**i for i in range(6, 14)]
+    ns = [2**i for i in range(6, 13)]
     times = []
     times_ = []
     times__ = []
     for n in ns:
         A = np.random.randn(n,n)
         start = time.time()
-        fwht_mat(A)
+        B=fwht_mat(A, copy=True)
         end = time.time()
         times.append(end-start)
         #H = hadamard(n) / np.sqrt( n )
@@ -68,10 +71,10 @@ else:
         #end = time.time()
         #times_.append(end-start)
         start = time.time()
-        fwht_mat_bis(A)
+        B__=fwht_mat_bis(A, copy=True)
         end = time.time()
         times__.append(end-start)
-        #assert np.allclose(B, B__), 'Bs not equal'
+        assert np.allclose(B, B__), 'Bs not equal'
         #print(B[:5,:5], '\n', B__[:5,:5])
 
     fig, ax = plt.subplots()
