@@ -101,7 +101,7 @@ def SRHT_sketching( A_ij, n, l, seed_factor, comm  ):
     return pm.assemble_B_C( C_ij, B_ij, n, l, comm, only_C=False )   
 
 
-def rank_k_approx( B, C, n, k, comm ):
+def rank_k_approx( B, C, n, k, comm=None ):
     ## What should be parallelized here ? ##
     # QR decompositions are n x l in complexity
     # SVD and EIG are l^3 in complexity
@@ -109,6 +109,7 @@ def rank_k_approx( B, C, n, k, comm ):
     A_k = None
     U_hat = None
     S_2 = None
+    rank=0 # Tara looks into it :)
     if rank == 0:
         Q = None
         U = None
@@ -126,7 +127,8 @@ def rank_k_approx( B, C, n, k, comm ):
         U_hat = Q @ U[:,:k] # should this be done in parallel ?
         S_2 = S_2[:k]
         S_2.reshape(1,-1)
-
+    if comm==None:
+        return U_hat @ np.diag(S_2) @ U_hat.T
     # this is (n^2)l in complexity, and is usually avoided
     # here we need it to get the Frobenius norm of the error
     # we therefore do it in parallel 
