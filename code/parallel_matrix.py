@@ -91,6 +91,18 @@ def get_A_i_to_column_i( A, comm ):
                 A_i = comm_col.bcast( A_i, root=0 )
     return A_i
 
+def full_multiply( A, B, comm ):
+    '''
+    Multiply A and B matrices in parallel. Result is returned only to rank 0.
+    '''
+    n, l = None, None
+    rank = comm.Get_rank()
+    if rank == 0:
+        n = A.shape[0]
+        l = B.shape[1]
+    A_ij = split_matrix(A, comm)
+    B_j = get_A_i_to_column_i(B, comm)
+    return multiply( A_ij, None, B_j, n, l, comm, only_C=True )
 
 def multiply( A_ij, B_i_T, B_j, n, l, comm, only_C=False ):
     '''
@@ -148,7 +160,8 @@ def assemble_B_C( C_ij, B_ij, n, l, comm, only_C=False ):
         C_i = np.ascontiguousarray(C_i)
         comm_col.Gather(C_i, C, root=0)
 
-    if not only_C:
-        comm.Reduce(B_ij, B, op=MPI.SUM, root=0)
-
+    if only_C:
+        return C
+    
+    comm.Reduce(B_ij, B, op=MPI.SUM, root=0)
     return B, C

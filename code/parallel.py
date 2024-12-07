@@ -57,6 +57,7 @@ def gaussian_sketching( A_ij, n, l, seed_factor, comm ):
     omega_j = get_omega_k(j)
     omega_i = get_omega_k(i)
    
+    #print(f'rank={rank}, a_ij={A_ij.shape}, omega_i={omega_i.shape}, omega_j={omega_j.shape}')
     return pm.multiply( A_ij, omega_i.T, omega_j, n, l, comm )
 
 def int_check( to_check ):
@@ -100,47 +101,76 @@ def SRHT_sketching( A_ij, n, l, seed_factor, comm  ):
     
     return pm.assemble_B_C( C_ij, B_ij, n, l, comm, only_C=False )   
 
+def seq_rank_k_approx( B, C, n, k ):
+    '''
+    Compute k-rank approximation of A from B and C.
 
-def rank_k_approx( B, C, n, k, comm=None ):
-    ## What should be parallelized here ? ##
-    # QR decompositions are n x l in complexity
-    # SVD and EIG are l^3 in complexity
-
+    Parameters
+    B : np.ndarray, the sketch of A
+    C : np.ndarray, the sketch of A
+    '''
     A_k = None
     U_hat = None
     S_2 = None
-    rank=0 # Tara looks into it :)
-    if rank == 0:
-        Q = None
-        U = None
-        try:
-            L = np.linalg.cholesky( B )
-            Z = solve_triangular(L, C.T, lower=True).T
-            Q, R = np.linalg.qr(Z) # should this be done in parallel ?
-            U, s, V = np.linalg.svd(R, full_matrices=False)
-            S_2 = s**2 
-        except np.linalg.LinAlgError:
-            lambdas, U = np.linalg.eigh( B )
-            Q, R = np.linalg.qr( C ) # should this be done in parallel ?
-            S_2 = lambdas
+    Q = None
+    U = None
+    try:
+        L = np.linalg.cholesky(B)
+        Z = solve_triangular(L, C.T, lower=True).T
+        Q, R = np.linalg.qr(Z)
+        U, s, V = np.linalg.svd(R, full_matrices=False)
+        S_2 = s**2 
+    except np.linalg.LinAlgError:
+        lambdas, U = np.linalg.eigh(B)
+        Q, R = np.linalg.qr(C)
+        S_2 = lambdas
 
-        U_hat = Q @ U[:,:k] # should this be done in parallel ?
-        S_2 = S_2[:k]
-        S_2.reshape(1,-1)
-    if comm==None:
-        return U_hat @ np.diag(S_2) @ U_hat.T
-    # this is (n^2)l in complexity, and is usually avoided
-    # here we need it to get the Frobenius norm of the error
-    # we therefore do it in parallel 
+    U_hat = Q @ U[:,:k] 
+    S_2 = S_2[:k]
+    S_2.reshape(1,-1)
+
+    return U_hat @ np.diag(S_2) @ U_hat.T
+
+
+def rank_k_approx( B, C, n, k, comm ):
+    rank = comm.Get_rank()
+
+    S_2 = None
+    Q = None
+    U = None
+    flag = False
+    if rank == 0:
+        try:
+            L = np.linalg.cholesky(B)
+            Z = solve_triangular(L, C.T, lower=True).T
+        except np.linalg.LinAlgError:
+            lambdas, U = np.linalg.eigh(B)
+        
+    if flag:
+        if rank==0: 
+            Q, R = np.linalg.qr(Z)
+            U, s, V = np.linalg.svd(R, full_matrices=False) # only rank 0 has QR results
+            S_2 = s**2 
+            U = U[:,:k]
+    else:
+        if rank == 0:    
+            Q, R = np.linalg.qr(C)
+            S_2 = lambdas 
+            U = U[:,:k]
+
+    U_hat = pm.full_multiply( Q, U, comm )
     arg_1 = None
     arg_2 = None
     if rank == 0:
+        S_2 = S_2[:k]
+        S_2.reshape(1,-1)
         arg_1 = U_hat * S_2
         arg_2 = U_hat.T
-    A_k_ij = pm.split_matrix( arg_1, comm )
-    M_j = pm.get_A_i_to_column_i( arg_2, comm )
-    _, A_k = pm.multiply( A_k_ij, M_j, M_j, n, n, comm, only_C=True )
-    
+
+    A_k = pm.full_multiply( arg_1, arg_2, comm )
+    # this is (n^2)l in complexity, and is usually avoided. Here we need it to get the 
+    # Frobenius norm of the error. We therefore do it in parallel.
+
     return A_k
 
 
@@ -151,24 +181,30 @@ if __name__ == '__main__':
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
 
-    n = 2**12
-    r = 2**8
-    k = 2**8
-    p = 2**8
+    n = 2**11
+    r = 2**7
+    k = 2**7 + 5
+    p = 2**7
     l = k + p
 
-#    mat = synthetic_matrix( n, r, 'slow', 'polynomial' )
     #mat = synthetic_matrix( n, r, 'fast', 'polynomial' )
     mat = synthetic_matrix( n, r, 'fast', 'exponential' )
 
     c = 10
-
     mat_bis = MNIST_matrix( n, c )
     mat_ij = pm.split_matrix( mat_bis, comm )
 
-    #sketching_func = gaussian_sketching
-    sketching_func = SRHT_sketching
-    B, C = sketching_func( mat_ij, n, l, seed_factor, comm )
-    mat_k = rank_k_approx( B, C, n, k, comm )
-    if rank == 0:
-        print('Frobenius norm of the error: ', np.linalg.norm(mat_bis - mat_k, 'fro') / np.linalg.norm(mat_bis, 'fro'))
+
+    def compute_error( mat, n, l, k, seed_factor, comm, seq = True ):
+        mat_ij = pm.split_matrix( mat, comm )
+        B, C = gaussian_sketching( mat_ij, n, l, seed_factor, comm )
+        if seq:
+            if rank == 0:
+                mat_k = seq_rank_k_approx( B, C, n, k )
+        else:
+            mat_k = rank_k_approx( B, C, n, k, comm )
+        if rank == 0:
+            print(np.linalg.norm(mat - mat_k, 'nuc') / np.linalg.norm(mat, 'nuc'))
+
+    compute_error( mat, n, l, k, seed_factor, comm )
+
