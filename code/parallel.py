@@ -109,7 +109,6 @@ def seq_rank_k_approx( B, C, n, k ):
     B : np.ndarray, the sketch of A
     C : np.ndarray, the sketch of A
     '''
-    A_k = None
     U_hat = None
     S_2 = None
     Q = None
@@ -129,7 +128,7 @@ def seq_rank_k_approx( B, C, n, k ):
     S_2 = S_2[:k]
     S_2.reshape(1,-1)
 
-    return U_hat @ np.diag(S_2) @ U_hat.T
+    return (U_hat * S_2) @ U_hat.T
 
 
 def rank_k_approx( B, C, n, k, comm ):
