@@ -1,6 +1,7 @@
 import numpy as np
 from mpi4py import MPI
 #from icecream import ic
+from scipy.linalg import solve_triangular, block_diag
 
 def root_blocks_from_comm( comm ):
     '''
@@ -165,3 +166,136 @@ def assemble_B_C( C_ij, B_ij, n, l, comm, only_C=False ):
     
     comm.Reduce(B_ij, B, op=MPI.SUM, root=0)
     return B, C
+
+
+## check if need TSQR too ??
+def parallel_CQR( A_l, m, n, comm ):
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+
+    G = np.empty((n, n))   
+    comm.Allreduce( A_l.T@A_l, G, op=MPI.SUM )
+    
+    R = np.linalg.cholesky(G) # cholesky returns the lower triangular matrix
+    #// solve R@Q_l.T=A_l.T as we have Q_l=A_l@(R.T)^-1
+    Q_l = solve_triangular(R, A_l.T, lower=True).T
+    
+    Q = None
+    if rank == 0:
+        Q = np.empty((m, n), dtype=float)
+    Q = comm.gather(Q_l, root=0)
+
+    return Q, R
+
+def row_distrib_mat( mat, comm, return_shape=False ):
+    '''
+    Distribute the rows of a matrix to the cores in communicator.
+    '''
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    
+    m, n = None, None
+    if rank == 0:
+        m, n = mat.shape
+    m, n = comm.bcast( (m, n), root=0 )
+    
+    rows_per_proc = [m // size + (1 if x < m % size else 0) for x in range(size)]
+    counts = np.array([r * n for r in rows_per_proc])
+    displs = np.concat( ([0], np.cumsum( counts[:-1])) )
+    #print(displs, counts.shape)
+    #displs = [sum(counts[:i]) for i in range(size)]
+    # On all ranks:
+    local_rows = rows_per_proc[rank]
+    local_A = np.empty((local_rows, n), dtype=np.float64)
+
+    if rank == 0:
+        comm.Scatterv([mat, counts, displs, MPI.DOUBLE], local_A, root=0)
+    else:
+        comm.Scatterv([None, counts, displs, MPI.DOUBLE], local_A, root=0)
+    
+    if return_shape:
+        return local_A, (m, n)
+    return local_A
+
+
+def get_partner_idx( rank:int, k:int ) -> int:
+    idx = 0
+    if rank % 2**(k+1) == 0:
+        idx = rank + 2**k
+    else:
+        idx = rank - 2**k
+    return idx
+
+def int_check( to_check ):
+    assert to_check.is_integer(), "Value is not an integer"
+    return int(to_check)
+
+def TSQR(A_l, comm):
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+
+    Ys = None
+    Y_l_kp1, R_l_kp1 = np.linalg.qr(A_l, mode='reduced') 
+
+    Ys = [Y_l_kp1]
+    logp_tot = int_check(np.log2(size))
+    for q in range(logp_tot): 
+        # only keep needed processors 
+        if not (rank % 2**q == 0):
+            continue
+        j = get_partner_idx(rank, q)
+        if rank > j:
+            comm.Send(R_l_kp1, dest=j)
+            break
+        else:
+            R_j_kp1 = np.empty(R_l_kp1.shape, dtype=float)
+            comm.Recv(R_j_kp1, source=j)
+            Y_l_k, R_l_k = np.linalg.qr(np.concatenate((R_l_kp1,R_j_kp1), axis=0), mode='reduced')
+            R_l_kp1 = R_l_k
+            Ys.append(Y_l_k)
+    R = None
+    if rank == 0:
+        R = R_l_k
+    return Ys, R
+
+def get_right_mat_shape( m:int, n:int, p:int, logp_tot:int ):
+    if p == 2 ** logp_tot:
+        return (int_check(m/p), n)
+    m = 2 * n
+    n = n
+    return (m,n)
+
+def build_Q( Y_s, m, n, comm ):
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    logp_tot = int_check(np.log2(size))
+
+    current_Q = None
+    if rank == 0: # set up the initial Q
+        current_Q = Y_s[-1]
+        Y_s.pop()
+    for q in range(logp_tot-1,-1,-1):
+        # loop from pen-ultimate stage to first stage
+        logp = logp_tot - q
+        color = 1
+        if not (rank % 2**q == 0):
+            color = MPI.UNDEFINED
+            new_comm = comm.Split(color, key=rank)
+            continue
+        new_comm = comm.Split(color, key=rank)
+
+        p = 2**logp
+        if new_comm is not None:
+            subs_Q_k = None
+            if new_comm.Get_rank() == 0:
+                shape = get_right_mat_shape( m, n, p, logp_tot )
+                subs_Q_k = np.empty((p, *shape), dtype=float) 
+            sub_mat = Y_s[-1]
+            Y_s.pop()
+            new_comm.Gather(sub_mat, subs_Q_k, root=0)
+
+            if new_comm.Get_rank() == 0:
+                Q_k = block_diag(*subs_Q_k)
+                current_Q = Q_k @ current_Q
+            # Gather assembles the object by sorting received data by rank  
+    return current_Q

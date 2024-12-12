@@ -1,14 +1,15 @@
-from parallel_matrix import full_multiply
+import parallel_matrix as pm
 from mpi4py import MPI
 import numpy as np
+import time as time
 # init mpi
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
-A = np.random.randn(4,4)
-B = np.random.randn(4,3)
+A = np.random.randn(8,3)
+A_l = pm.row_distrib_mat(A, comm)
 
-C = full_multiply( A, B, comm )
-print(f'rank={rank}, C={C}')
 if rank == 0:
-    assert np.allclose( C, A @ B ), 'C is not A@B'
+    print(A)
+time.sleep(1)
+print(f'rank={rank}, A_l={A_l}')

@@ -3,6 +3,21 @@ import scipy.sparse as sp
 import bz2
 
 def synthetic_matrix( n, r, decay_rate, decay_type ) : 
+    '''
+    Generate a synthetic matrix with a given rank and decay rate.
+    Note that the r parameter is not exactly the rank of the matrix, but rather the number of 1 eigenvalues before the decrease starts.
+
+    Parameters
+    ----------
+    n : int
+        The size of the matrix.
+    r : int
+        The number of 1 eigenvalues before the decrease starts.
+    decay_rate : str
+        The rate of decay for the eigenvalues. Can be 'fast', 'medium', or 'slow'.
+    decay_type : str
+        The type of decay for the eigenvalues. Can be 'exponential' or 'polynomial'.
+    '''
     ones = np.ones(r)
     others = np.arange(1,n-r+1)
 
