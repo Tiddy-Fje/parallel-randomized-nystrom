@@ -1,5 +1,6 @@
 import numpy as np
 from mpi4py import MPI
+from sequential import half_numpy_prod
 #from icecream import ic
 from scipy.linalg import solve_triangular, block_diag
 
@@ -105,7 +106,7 @@ def full_multiply( A, B, comm ):
     B_j = get_A_i_to_column_i(B, comm)
     return multiply( A_ij, None, B_j, n, l, comm, only_C=True )
 
-def multiply( A_ij, B_i_T, B_j, n, l, comm, only_C=False ):
+def multiply( A_ij, B_i_T, B_j, n, l, comm, only_C=False, half_numpy=True ):
     '''
     Multiplies A and B matrices in parallel to obtain B.T@A@B and A@B. 
     A_ij is the local block of A matrix.
@@ -117,10 +118,17 @@ def multiply( A_ij, B_i_T, B_j, n, l, comm, only_C=False ):
     comm is the MPI communicator.
     only_C is a flag to indicate if only the C matrix has to be computed. In this case B_i_T is not used.
     '''
-    C_ij = A_ij @ B_j
+    C_ij = None
     B_ij = None
-    if not only_C:
-        B_ij = B_i_T @ C_ij
+    
+    if not half_numpy:
+        C_ij = A_ij @ B_j
+        if not only_C:
+            B_ij = B_i_T @ C_ij
+    else:    
+        C_ij = half_numpy_prod( A_ij, B_j )
+        if not only_C:
+            B_ij = half_numpy_prod( B_i_T, C_ij )
 
     return assemble_B_C( C_ij, B_ij, n, l, comm, only_C )
     

@@ -37,18 +37,6 @@ def SRHT_sketch(n, l, random_seed):
         lambda i, j: signs[i] * (-1) ** (bin(i & randCol[j]).count("1"))
     ), (n, l), dtype=int) / math.sqrt(l)
 
-# WHAT IS THIS ??
-def short_axis_sketch(n, l, t, random_seed):
-    """Generate a short-axis sketching matrix."""
-    rng = np.random.default_rng(random_seed)
-    sketch = np.zeros((n, l), dtype='d')
-    bounds = np.ceil(np.linspace(0, l, t + 1))
-
-    for i in range(n):
-        col = rng.integers(bounds[:t], bounds[1:], size=t)
-        sketch[i, col] = rng.choice([-1, 1], size=t) * rng.uniform(1.0, 2.0, size=t)
-    return sketch
-
 
 def block_SRHT(n, l, random_seed):
     """Generate a block Subsampled Randomized Hadamard Transform (SRHT) sketching matrix."""

@@ -1,39 +1,31 @@
-from parallel import gaussian_sketching, SRHT_sketching, time_sketching
-from sequential import sequential_gaussian_sketch, block_SRHT, block_SRHT_bis
+from parallel import time_k_rank
 import numpy as np
 from mpi4py import MPI
 import h5py
-from data_generation import synthetic_matrix
+#from data_generation import synthetic_matrix
 
-# TO DO : SEQUENTIAL SRHT SKETCHING FUNCTION SLOWER THAN ALTERNATIVE (TALK W/ AMAL)
-
-def analysis( A_ij, n, l, algorithm, seed_factor, comm, n_rep, output_file ):
-    max_runtimes = time_sketching( A_ij, n, l, algorithm, seed_factor, comm, n_rep) 
+def analysis( A_ij, n, l, k, sketch_type, seed_factor, comm, n_rep, output_file ):
+    max_sketch_ts, max_k_rank_ts = time_k_rank( A_ij, n, l, k, sketch_type, seed_factor, comm, n_rep) 
 
     rank = comm.Get_rank()
     size = comm.Get_size()
     if rank == 0:
-        label = None
-        if algorithm in [gaussian_sketching,sequential_gaussian_sketch]:
-            label = 'Gaussian'
-        elif algorithm in [SRHT_sketching, block_SRHT, block_SRHT_bis]:
-            label = 'SRHT'
-        else:
-            raise ValueError(f"Unknown algorithm")
-        
-        print(f'Max runtime for {label} w/ n={n} l={l}: {max_runtimes}')
+        print(f'Results for {sketch_type} w/ n={n} l={l} k={k}')
+        print(f'Max sketch ts : {max_sketch_ts}')
+        print(f'Max k_rank ts : {max_k_rank_ts}')
         with h5py.File(f'{output_file}.h5', 'a') as f:
             cores_lab = ''
             if 'parallel' in output_file:
                 cores_lab = f'_cores={size}'
-            data_lab = f'n={n}_l={l}'
+            
+            data_lab = f'n={n}_l={l}_k={k}'
             # if dataset already exists, skip the writing
-            if f'{data_lab}_mean' in f[f'{label}{cores_lab}'].keys():
+            if f'sketch_ts_{data_lab}_mean' in f[f'{sketch_type}{cores_lab}'].keys():
                 return
-            #print(f'{label}{cores_lab}')
-            #print(data_lab)
-            f[f'{label}{cores_lab}'].create_dataset(f'{data_lab}_mean', data=np.mean(max_runtimes))
-            f[f'{label}{cores_lab}'].create_dataset(f'{data_lab}_std', data=np.std(max_runtimes))
+            f[f'{sketch_type}{cores_lab}'].create_dataset(f'sketch_ts_{data_lab}_mean', data=np.mean(max_sketch_ts))
+            f[f'{sketch_type}{cores_lab}'].create_dataset(f'sketch_ts_{data_lab}_std', data=np.std(max_sketch_ts))
+            f[f'{sketch_type}{cores_lab}'].create_dataset(f'k_rank_ts_{data_lab}_mean', data=np.mean(max_k_rank_ts))
+            f[f'{sketch_type}{cores_lab}'].create_dataset(f'k_rank_ts_{data_lab}_std', data=np.std(max_k_rank_ts))
     return
 
 if __name__ == '__main__':
@@ -65,19 +57,20 @@ if __name__ == '__main__':
         f['parameters'].create_dataset('ls', data=ls)
         f['parameters'].create_dataset('ns', data=ns)
 
-
     comm = MPI.COMM_WORLD  
+    k = l // 2
     for n_ in ns:
-        A = np.random.normal(size=(n_, n_))    #A = synthetic_matrix(n_, n_//4, 'fast', 'exponential')
-        analysis(A, n_, l, sequential_gaussian_sketch, seed_factor, comm, n_rep, output_file)
-        #analysis(n, l, block_SRHT, seed_factor, comm, n_rep, output_file)
-        analysis(A, n_, l, block_SRHT_bis, seed_factor, comm, n_rep, output_file)
+        A = np.random.normal(size=(n_, n_))    
+        #A = synthetic_matrix(n_, n_//4, 'fast', 'exponential')
+        analysis(A, n_, l, k, 'Gaussian', seed_factor, comm, n_rep, output_file)
+        analysis(A, n_, l, k, 'SRHT', seed_factor, comm, n_rep, output_file)
+    
     #A = synthetic_matrix(n, n//4, 'fast', 'exponential') 
     A = np.random.normal(size=(n, n))
     for l_ in ls:
-        analysis(A, n, l_, sequential_gaussian_sketch, seed_factor, comm, n_rep, output_file)
-        #analysis(n, l, block_SRHT, seed_factor, comm, n_rep, output_file)
-        analysis(A, n, l_, block_SRHT_bis, seed_factor, comm, n_rep, output_file)
+        k = l // 2
+        analysis(A, n, l_, k, 'Gaussian', seed_factor, comm, n_rep, output_file)
+        analysis(A, n, l_, k, 'SRHT', seed_factor, comm, n_rep, output_file)
 
 #  with h5py.File(f'{output_file}.h5', 'r') as f:
 #       print(f['Gaussian'].keys())

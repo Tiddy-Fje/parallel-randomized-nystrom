@@ -58,7 +58,11 @@ def generate_plots(A, n, ls, ks, methods, method_names, dataset_name, output_dir
 
 
 if __name__ == "__main__":
-    
+    # Tara's impressions 
+    # - we need to be careful by taking l/n small enough to have a good sketching properties (so normal that we had bad values for larger l)
+    # - increasing k with l/n unappropriated will not help, and probably makes things worse by adding noise ??
+
+
     n = 2 ** 10
     r = 3 * n // 4
     log2_l_min, log2_l_max = 6, 9

@@ -6,38 +6,69 @@ from data_generation import synthetic_matrix, MNIST_matrix
 import time
 from utility import fwht_mat
 from sequential import sequential_gaussian_sketch, block_SRHT_bis
-#from icecream import ic
 
-def time_sketching( A_ij, n, l, algorithm, seed_factor, comm, n_rep ):
+def time_function( function, *args ):
+    start = time.perf_counter()
+    result = function(*args)
+    if result is not None:
+        result = tuple(result)
+    end = time.perf_counter()
+    return end - start, result
+
+
+def time_k_rank( A_ij, n, l, k, sketch_type, seed_factor, comm, n_rep ):
     rank = comm.Get_rank()
     size = comm.Get_size() 
 
-    runtimes = np.empty(n_rep)
+    sketch_fun = {}
+    k_rank_fun = {}
+    if sketch_type == 'Gaussian':
+        sketch_fun['parallel'] = gaussian_sketching
+        sketch_fun['sequential'] = sequential_gaussian_sketch
+    elif sketch_type == 'SRHT':
+        sketch_fun['parallel'] = SRHT_sketching
+        sketch_fun['sequential'] = block_SRHT_bis
+    else:
+        raise ValueError('Unknown sketch type')
+    k_rank_fun['parallel'] = rank_k_approx
+    k_rank_fun['sequential'] = seq_rank_k_approx
+
+    sketch_runtimes = np.empty(n_rep)
+    k_rank_runtime = np.empty(n_rep)
     for  i in range(n_rep):
-        start = time.perf_counter()
+        BC = None
         if size == 1:
-            B, C = algorithm( A_ij, n, l, seed_factor )
+            sketch_runtimes[i], BC = time_function( sketch_fun['sequential'], A_ij, n, l, seed_factor )
         else:
-            B, C = algorithm( A_ij, n, l, seed_factor, comm ) 
-        end = time.perf_counter()
-        runtimes[i] = end - start
+            sketch_runtimes[i], BC = time_function( sketch_fun['parallel'], A_ij, n, l, seed_factor, comm )
+        B, C = BC
+        comm.Barrier()
+        if size == 1:
+            k_rank_runtime[i], _ = time_function( k_rank_fun['sequential'], B, C, n, k )
+        else:
+            k_rank_runtime[i], _ = time_function( k_rank_fun['parallel'], B, C, n, k, comm )
         comm.Barrier()
 
     if size == 1:
-        return runtimes
+        return sketch_runtimes, k_rank_runtime
 
-    tot_runtimes = None
+    tot_sketch_ts = None
+    tot_k_rank_ts = None
     if rank == 0:
-        tot_runtimes = np.empty((size,n_rep), dtype=float)
-    comm.Gather(runtimes, tot_runtimes, root=0)
-
-    max_runtimes = None
+        tot_sketch_ts = np.empty((size,n_rep), dtype=float)
+        tot_k_rank_ts = np.empty((size,n_rep), dtype=float)
+    comm.Gather(sketch_runtimes, tot_sketch_ts, root=0)
+    comm.Gather(k_rank_runtime, tot_k_rank_ts, root=0)
+    
+    max_sketch_ts = None
+    max_k_rank_ts = None
     if rank == 0:
-        max_runtimes = np.max(tot_runtimes, axis=0) 
-    return max_runtimes
+        max_sketch_ts = np.max(tot_sketch_ts, axis=0) 
+        max_k_rank_ts = np.max(tot_k_rank_ts, axis=0)
+    return max_sketch_ts, max_k_rank_ts
 
 
-def gaussian_sketching( A_ij, n, l, seed_factor, comm ): 
+def gaussian_sketching( A_ij, n, l, seed_factor, comm, half_numpy=True ): 
     if comm.Get_size() == 1:
         return sequential_gaussian_sketch( A_ij, n, l, seed_factor )
     rank = comm.Get_rank()
@@ -57,7 +88,6 @@ def gaussian_sketching( A_ij, n, l, seed_factor, comm ):
     omega_j = get_omega_k(j)
     omega_i = get_omega_k(i)
    
-    #print(f'rank={rank}, a_ij={A_ij.shape}, omega_i={omega_i.shape}, omega_j={omega_j.shape}')
     return pm.multiply( A_ij, omega_i.T, omega_j, n, l, comm )
 
 def int_check( to_check ):
@@ -109,6 +139,8 @@ def seq_rank_k_approx( B, C, n, k, alternative=False ):
     B : np.ndarray, A @ Omega
     C : np.ndarray, Omega.T @ A @ Omega
     '''
+    assert len(B) > k, 'We should have l>k'
+
     U_hat = None
     S_2 = None
     Q = None
@@ -141,16 +173,19 @@ def seq_rank_k_approx( B, C, n, k, alternative=False ):
     return (U_hat * S_2) @ U_hat.T
 
 
-def rank_k_approx( B, C, n, k, comm ):
+def rank_k_approx( B, C, n, k, comm, return_A_k=True ):
     rank = comm.Get_rank()
 
     S_2 = None
     Q = None
     U = None
-    lambdas = None
     Z = None
+    lambdas = None
+
     flag = True
     if rank == 0:
+        assert len(B) > k, f'We should have l>k, but l={len(B)} and k={k}'
+
         try:
             L = np.linalg.cholesky(B)
             Z = solve_triangular(L, C.T, lower=True).T
@@ -185,11 +220,13 @@ def rank_k_approx( B, C, n, k, comm ):
         arg_1 = U_hat * S_2
         arg_2 = U_hat.T
 
-    A_k = pm.full_multiply( arg_1, arg_2, comm )
-    # this is (n^2)l in complexity, and is usually avoided. Here we need it to get the 
-    # Frobenius norm of the error. We therefore do it in parallel.
-
-    return A_k
+    if return_A_k:
+        A_k = pm.full_multiply( arg_1, arg_2, comm )
+        # this is (n^2)l in complexity, and is usually avoided. Here we need it to get the 
+        # Frobenius norm of the error. We therefore do it in parallel.
+        return A_k
+    
+    return
 
 
 
@@ -225,5 +262,4 @@ if __name__ == '__main__':
             print(np.linalg.norm(mat - mat_k, 'fro') / np.linalg.norm(mat, 'fro'))
 
     compute_error( mat, n, l, k, seed_factor, comm )
-#    compute_error( mat, n, l, k, seed_factor, comm, seq=False )
 

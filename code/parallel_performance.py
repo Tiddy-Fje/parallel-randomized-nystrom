@@ -1,10 +1,8 @@
-from parallel import gaussian_sketching, SRHT_sketching
 from sequential_performance import analysis
 from parallel_matrix import split_matrix
 from data_generation import synthetic_matrix
 from mpi4py import MPI
 import h5py
-import numpy as np
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -13,11 +11,11 @@ size = comm.Get_size()
 seed_factor = 1234
 n_rep = 3
 
-log2_n_small = 10
+log2_n_small = 8
 n_small = 2 ** log2_n_small
 l_small = 2 ** (log2_n_small-2)
 
-log2_n_large = 14
+log2_n_large = 12
 n_large = 2 ** log2_n_large
 l_large = 2 ** (log2_n_large-2)
 
@@ -35,17 +33,21 @@ if rank == 0:
             f['parameters'].create_dataset('l_small', data=l_small)
             f['parameters'].create_dataset('l_large', data=l_large)
 
-A_ij = synthetic_matrix(n_small, n_small//4, 'fast', 'exponential')
+r_small = 3 * n_small // 4
+k_small = l_small // 2
+A_ij = synthetic_matrix(n_small, r_small, 'fast', 'exponential')
 if size > 1:
     A_ij = split_matrix(A_ij, comm)
-analysis(A_ij, n_small, l_small, gaussian_sketching, seed_factor, comm, n_rep, output_file)
-analysis(A_ij, n_small, l_small, SRHT_sketching, seed_factor, comm, n_rep, output_file)
+analysis(A_ij, n_small, l_small, k_small, 'Gaussian', seed_factor, comm, n_rep, output_file)
+analysis(A_ij, n_small, l_small, k_small, 'SRHT', seed_factor, comm, n_rep, output_file)
 
-B_ij = synthetic_matrix(n_large, n_large//4, 'fast', 'exponential')
+r_large = 3 * n_large // 4
+k_large = l_large // 2
+B_ij = synthetic_matrix(n_large, r_large, 'fast', 'exponential')
 if size > 1:
     B_ij = split_matrix(B_ij, comm)
-analysis(B_ij, n_large, l_large, gaussian_sketching, seed_factor, comm, n_rep, output_file)
-analysis(B_ij, n_large, l_large, SRHT_sketching, seed_factor, comm, n_rep, output_file)
+analysis(B_ij, n_large, l_large, k_large, 'Gaussian', seed_factor, comm, n_rep, output_file)
+analysis(B_ij, n_large, l_large, k_large, 'SRHT', seed_factor, comm, n_rep, output_file)
 
 
 
