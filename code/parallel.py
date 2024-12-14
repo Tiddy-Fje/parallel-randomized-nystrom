@@ -7,9 +7,11 @@ import time
 from utility import fwht_mat
 from sequential import sequential_gaussian_sketch, block_SRHT_bis
 
-def time_function( function, *args ):
+def time_function( function, *args, **kwargs ):
     start = time.perf_counter()
-    result = function(*args)
+    #print(kwargs)
+    result = function(*args,**kwargs)
+    #print(kwargs)
     if result is not None:
         result = tuple(result)
     end = time.perf_counter()
@@ -44,9 +46,9 @@ def time_k_rank( A_ij, n, l, k, sketch_type, seed_factor, comm, n_rep ):
         B, C = BC
         comm.Barrier()
         if size == 1:
-            k_rank_runtime[i], _ = time_function( k_rank_fun['sequential'], B, C, n, k )
+            k_rank_runtime[i], _ = time_function( k_rank_fun['sequential'], B, C, n, k, return_A_k=False )
         else:
-            k_rank_runtime[i], _ = time_function( k_rank_fun['parallel'], B, C, n, k, comm )
+            k_rank_runtime[i], _ = time_function( k_rank_fun['parallel'], B, C, n, k, comm, return_A_k=True )
         comm.Barrier()
 
     if size == 1:
@@ -131,7 +133,7 @@ def SRHT_sketching( A_ij, n, l, seed_factor, comm  ):
     
     return pm.assemble_B_C( C_ij, B_ij, n, l, comm, only_C=False )   
 
-def seq_rank_k_approx( B, C, n, k, alternative=False ):
+def seq_rank_k_approx( B, C, n, k, alternative=False, return_A_k=True ):
     '''
     Compute k-rank approximation of A from B and C.
 
@@ -175,7 +177,6 @@ def seq_rank_k_approx( B, C, n, k, alternative=False ):
 
 def rank_k_approx( B, C, n, k, comm, return_A_k=True ):
     rank = comm.Get_rank()
-
     S_2 = None
     Q = None
     U = None
@@ -221,7 +222,7 @@ def rank_k_approx( B, C, n, k, comm, return_A_k=True ):
         arg_2 = U_hat.T
 
     if return_A_k:
-        A_k = pm.full_multiply( arg_1, arg_2, comm )
+        A_k = pm.full_multiply( arg_1, arg_2, comm ) 
         # this is (n^2)l in complexity, and is usually avoided. Here we need it to get the 
         # Frobenius norm of the error. We therefore do it in parallel.
         return A_k

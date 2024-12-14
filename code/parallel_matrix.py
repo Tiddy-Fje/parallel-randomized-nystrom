@@ -104,7 +104,7 @@ def full_multiply( A, B, comm ):
         l = B.shape[1]
     A_ij = split_matrix(A, comm)
     B_j = get_A_i_to_column_i(B, comm)
-    return multiply( A_ij, None, B_j, n, l, comm, only_C=True )
+    return multiply( A_ij, None, B_j, n, l, comm, only_C=True, half_numpy=False )
 
 def multiply( A_ij, B_i_T, B_j, n, l, comm, only_C=False, half_numpy=True ):
     '''
@@ -209,7 +209,7 @@ def row_distrib_mat( mat, comm, return_shape=False ):
     
     rows_per_proc = [m // size + (1 if x < m % size else 0) for x in range(size)]
     counts = np.array([r * n for r in rows_per_proc])
-    displs = np.concat( ([0], np.cumsum( counts[:-1])) )
+    displs = np.concatenate( ([0], np.cumsum( counts[:-1])) )
     #print(displs, counts.shape)
     #displs = [sum(counts[:i]) for i in range(size)]
     # On all ranks:
