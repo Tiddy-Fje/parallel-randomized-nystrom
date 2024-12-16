@@ -9,14 +9,13 @@ from data_generation import *
 from utility import *
 
 def half_numpy_prod( A, Omega ):
-#    print(A.shape, Omega.shape)
     C = np.zeros((A.shape[0], Omega.shape[1]))
     for i in range(A.shape[0]):
         C[i,:] = A[i,:] @ Omega
     return C
 
 def sequential_gaussian_sketch( A, n, l, seed_factor, half_numpy=True ):
-    """Generate Gaussian sketching matrix."""
+    '''Generate Gaussian sketching matrix.'''
     rng = np.random.default_rng(seed_factor)
     omega = rng.normal(size=(n, l)) # / np.sqrt(l)  # FIGURE OUT IF NORMALIZATION IS NEEDED -> both work due to double multiplication in Nystrom
     if not half_numpy:
@@ -28,29 +27,18 @@ def sequential_gaussian_sketch( A, n, l, seed_factor, half_numpy=True ):
     return B, C
 
 def SRHT_sketch(n, l, random_seed):
-    """Generate a Subsampled Randomized Hadamard Transform (SRHT) sketching matrix."""
+    '''Generate a Subsampled Randomized Hadamard Transform (SRHT) sketching matrix.'''
     rng = np.random.default_rng(random_seed)
     signs = rng.choice([-1, 1], size=n)
     randCol = rng.choice(n, l, replace=False)
     
     return np.fromfunction(np.vectorize(
-        lambda i, j: signs[i] * (-1) ** (bin(i & randCol[j]).count("1"))
+        lambda i, j: signs[i] * (-1) ** (bin(i & randCol[j]).count('1'))
     ), (n, l), dtype=int) / math.sqrt(l)
 
-
-def block_SRHT(n, l, random_seed):
-    """Generate a block Subsampled Randomized Hadamard Transform (SRHT) sketching matrix."""
-    col_rng = np.random.default_rng(random_seed)
-    randCol = col_rng.choice(n, l, replace=False)
-    signsRows = col_rng.choice([-1, 1], size=n)
-    signsCols = col_rng.choice([-1, 1], size=l)
-
-    return np.fromfunction(np.vectorize(
-        lambda i, j: signsRows[i] * signsCols[j] * (-1) ** (bin(i & randCol[j]).count("1"))
-    ), (n, l), dtype=int) / math.sqrt(l)
 
 def block_SRHT_bis( A, n, l, random_seed):
-    """Generate a block Subsampled Randomized Hadamard Transform (SRHT) sketching matrix."""
+    '''Generate a block Subsampled Randomized Hadamard Transform (SRHT) sketching matrix.'''
     np.random.seed(random_seed)
     rows = np.concatenate( (np.ones(l), np.zeros(n-l)) ).astype(bool)
     perm = np.random.permutation(n)
@@ -69,7 +57,7 @@ def block_SRHT_bis( A, n, l, random_seed):
     B = omega_at_A( C, D_L, D_R )
     return B, C
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     # Retrieve settings from a CSV file
     save_results = False
     line_id = get_counter()
@@ -77,9 +65,9 @@ if __name__ == "__main__":
     print_settings(n, matrix_type, RR, p, sigma, l, k, sketch_matrix, t, 1)
 
     # Check assumptions for input validity
-    assert n > 0 and math.log2(n).is_integer(), "n must be a power of 2"
-    assert l >= k, "l must be greater or equal than k"
-    assert t <= l, "t must be smaller or equal than l"
+    assert n > 0 and math.log2(n).is_integer(), 'n must be a power of 2'
+    assert l >= k, 'l must be greater or equal than k'
+    assert t <= l, 't must be smaller or equal than l'
 
     # Generate matrix A based on type
     match matrix_type:
@@ -92,7 +80,7 @@ if __name__ == "__main__":
         case 3:
             A = A_YearPredictionMSD(n, sigma)
         case _:
-            raise Exception("Unknown matrix type")
+            raise Exception('Unknown matrix type')
 
     start_time = time.time()
 
@@ -108,7 +96,7 @@ if __name__ == "__main__":
         case 3:
             omega = block_SRHT(n, l, random_seed)
         case _:
-            raise Exception("Unknown sketch type")
+            raise Exception('Unknown sketch type')
 
     # Compute C = A * Omega and B = Omega^T * C
     C = A @ omega

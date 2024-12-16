@@ -207,8 +207,10 @@ def rank_k_approx( B, C, n, k, comm, return_A_k=True ):
             U = U[:,:k]
     else:
         C_l, shape = pm.row_distrib_mat( C, comm, return_shape=True)
+        tsqr_start = time.perf_counter()
         Ys, R = pm.TSQR( C_l, comm )
-        Q = pm.build_Q( Ys, shape[0], shape[1], comm )
+        tsqr_end = time.perf_counter()
+        Q = pm.build_Q( Ys, shape[0], shape[1], comm ) # THIS TAKES A LOT OF TIME
         #Q, R = pm.parallel_CQR( C_l, shape[0], shape[1], comm ) # 
         if rank == 0:    
             S_2 = lambdas 
@@ -229,7 +231,6 @@ def rank_k_approx( B, C, n, k, comm, return_A_k=True ):
         # Frobenius norm of the error. We therefore do it in parallel.
         return A_k
     
-
 
 if __name__ == '__main__':
 

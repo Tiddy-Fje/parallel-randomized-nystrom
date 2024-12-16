@@ -119,24 +119,35 @@ def cores_variation( par_data_dict, ns_cores ):
     algos = ['SRHT', 'Gaussian']
     fmts = ['o', 's']
     cols = ['tab:blue', 'tab:orange']
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(1,2, figsize=(12,6))
     for j,algo in enumerate(algos):
-        means_small = np.zeros((len(ns_cores)))
-        stds_small = np.zeros((len(ns_cores)))
-        means_large = np.zeros((len(ns_cores)))
-        stds_large = np.zeros((len(ns_cores)))
+        sketch_means_small = np.zeros((len(ns_cores)))
+        sketch_stds_small = np.zeros((len(ns_cores)))
+        sketch_means_large = np.zeros((len(ns_cores)))
+        sketch_stds_large = np.zeros((len(ns_cores)))
+        krank_means_small = np.zeros((len(ns_cores)))
+        krank_stds_small = np.zeros((len(ns_cores)))
+        krank_means_large = np.zeros((len(ns_cores)))
+        krank_stds_large = np.zeros((len(ns_cores)))
         for i, n_cores in enumerate(ns_cores):
             lab_small = f'n={n_small}_l={l_small}_k={k_small}'
             lab_large = f'n={n_large}_l={l_large}_k={k_large}'
-            means_small[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'sketch_ts_{lab_small}_mean']
-            stds_small[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'sketch_ts_{lab_small}_std']
-            means_large[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'sketch_ts_{k_large}_mean']
-            stds_large[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'sketch_ts_{k_large}_std']
-        ax.errorbar(ns_cores, means_small, yerr=stds_small, fmt=fmts[j], label=f'{lab_small}', color=cols[0])
-        ax.errorbar(ns_cores, means_large, yerr=stds_large, fmt=fmts[j], label=f'{lab_large}', color=cols[1])
+            sketch_means_small[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'sketch_ts_{lab_small}_mean']
+            sketch_stds_small[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'sketch_ts_{lab_small}_std']
+            sketch_means_large[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'sketch_ts_{k_large}_mean']
+            sketch_stds_large[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'sketch_ts_{k_large}_std']
+            krank_means_small[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'k_rank_ts_{lab_small}_mean']
+            krank_stds_small[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'k_rank_ts_{lab_small}_std']
+            krank_means_large[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'k_rank_ts_{lab_large}_mean']
+            krank_stds_large[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'k_rank_ts_{lab_large}_std']
+        ax[0].errorbar(ns_cores, sketch_means_small, yerr=sketch_stds_small, fmt=fmts[j], color=cols[0])
+        ax[0].errorbar(ns_cores, krank_means_small, yerr=krank_stds_small, fmt=fmts[j], color=cols[1])
+        ax[1].errorbar(ns_cores, sketch_means_large, yerr=sketch_stds_large, fmt=fmts[j], color=cols[0])
+        ax[1].errorbar(ns_cores, krank_means_large, yerr=krank_stds_large, fmt=fmts[j], color=cols[1])
     ax.set_xlabel('Number of cores')
     ax.set_ylabel('Runtime [s]')
-    ax.set_title('Gaussian: circles, SRHT: squares')
+    ax[0].set_suptitle(lab_small.replace('_',' '))
+    ax[1].set_suptitle(lab_large.replace('_',' '))
     ax.legend()
     plt.savefig('../figures/runtimes_cores_variation.png')
     return
