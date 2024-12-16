@@ -31,11 +31,10 @@ def analysis( A_ij, n, l, k, sketch_type, seed_factor, comm, n_rep, output_file 
 if __name__ == '__main__':
     n_rep = 2
 
-    log2_l_min = 6
+    log2_l_min = 7
     log2_l_max = 10
     log2_ls = np.arange(log2_l_min, log2_l_max+1).astype(int)
     ls = 2 ** log2_ls
-    ks = ls // 2
     n = 2 ** (log2_l_max+2)
 
     log2_n_min = 10
@@ -43,7 +42,7 @@ if __name__ == '__main__':
     log2_ns = np.arange(log2_n_min, log2_n_max+1).astype(int)
     ns = 2 ** log2_ns
     l = 2 ** (log2_n_min-2)
-    k = l // 2
+    k = l // 3
 
     seed_factor = 1234
 
@@ -69,11 +68,6 @@ if __name__ == '__main__':
     
     #A = synthetic_matrix(n, n//4, 'fast', 'exponential') 
     A = np.random.normal(size=(n, n))
-    for l_,k_ in zip(ls,ks):
-        analysis(A, n, l_, k_, 'Gaussian', seed_factor, comm, n_rep, output_file)
-        analysis(A, n, l_, k_, 'SRHT', seed_factor, comm, n_rep, output_file)
-
-#  with h5py.File(f'{output_file}.h5', 'r') as f:
-#       print(f['Gaussian'].keys())
-#        print(f['SRHT'].keys())
-        
+    for l_ in ls:
+        analysis(A, n, l_, k, 'Gaussian', seed_factor, comm, n_rep, output_file)
+        analysis(A, n, l_, k, 'SRHT', seed_factor, comm, n_rep, output_file)

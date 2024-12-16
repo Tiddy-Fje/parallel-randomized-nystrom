@@ -39,6 +39,7 @@ def time_k_rank( A_ij, n, l, k, sketch_type, seed_factor, comm, n_rep ):
     k_rank_runtime = np.empty(n_rep)
     for  i in range(n_rep):
         BC = None
+        comm.Barrier()
         if size == 1:
             sketch_runtimes[i], BC = time_function( sketch_fun['sequential'], A_ij, n, l, seed_factor )
         else:
@@ -48,7 +49,7 @@ def time_k_rank( A_ij, n, l, k, sketch_type, seed_factor, comm, n_rep ):
         if size == 1:
             k_rank_runtime[i], _ = time_function( k_rank_fun['sequential'], B, C, n, k, return_A_k=False )
         else:
-            k_rank_runtime[i], _ = time_function( k_rank_fun['parallel'], B, C, n, k, comm, return_A_k=True )
+            k_rank_runtime[i], _ = time_function( k_rank_fun['parallel'], B, C, n, k, comm, return_A_k=False )
         comm.Barrier()
 
     if size == 1:
@@ -172,7 +173,8 @@ def seq_rank_k_approx( B, C, n, k, alternative=False, return_A_k=True ):
     S_2 = S_2[:k]
     S_2.reshape(1,-1)
 
-    return (U_hat * S_2) @ U_hat.T
+    if return_A_k:
+        return (U_hat * S_2) @ U_hat.T
 
 
 def rank_k_approx( B, C, n, k, comm, return_A_k=True ):
@@ -227,8 +229,6 @@ def rank_k_approx( B, C, n, k, comm, return_A_k=True ):
         # Frobenius norm of the error. We therefore do it in parallel.
         return A_k
     
-    return
-
 
 
 if __name__ == '__main__':

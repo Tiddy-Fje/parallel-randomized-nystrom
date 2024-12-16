@@ -10,9 +10,9 @@ plt.rcParams.update({'lines.linewidth': 2, 'lines.markersize': 10})
 plt.rcParams.update({'figure.autolayout': True})
 
 def h5_to_dict(h5_group): # This function is Chat gpt output
-    """
+    '''
     Recursively convert an h5py group or file into a nested dictionary.
-    """
+    '''
     result = {}
     for key, item in h5_group.items():
         if isinstance(item, h5py.Group):  # If the item is a group, recurse
@@ -53,6 +53,7 @@ def l_variation( seq_data_dict ):
     '''
     ls = seq_data_dict['parameters']['ls']
     n = seq_data_dict['parameters']['n']
+    k = seq_data_dict['parameters']['k']
     algos = list(seq_data_dict.keys())
     algos.remove('parameters')
     fig, ax = plt.subplots()
@@ -82,16 +83,23 @@ def n_variation( seq_data_dict ):
     '''
     ns = seq_data_dict['parameters']['ns']
     l = seq_data_dict['parameters']['l']
+    k = seq_data_dict['parameters']['k']
     algos = list(seq_data_dict.keys())
     algos.remove('parameters')
     fig, ax = plt.subplots()
     for algo in algos:
-        means = np.zeros((len(ns)))
-        stds = np.zeros((len(ns)))
+        sketch_means = np.zeros((len(ns)))
+        sketch_stds = np.zeros((len(ns)))
+        krank_means = np.zeros((len(ns)))
+        krank_stds = np.zeros((len(ns)))
         for i,n in enumerate(ns):
-            means[i] = seq_data_dict[algo][f'n={n}_l={l}_mean']
-            stds[i] = seq_data_dict[algo][f'n={n}_l={l}_std']
-        ax.errorbar(ns, means, yerr=stds, fmt='o', label=f'{algo}')
+            lab = f'n={n}_l={l}_k={k}'
+            sketch_means[i] = seq_data_dict[algo][f'sketch_ts_{lab}_mean']
+            sketch_stds[i] = seq_data_dict[algo][f'sketch_ts_{lab}_std']
+            krank_means[i] = seq_data_dict[algo][f'k_rank_ts_{lab}_mean']
+            krank_stds[i] = seq_data_dict[algo][f'k_rank_ts_{lab}_std']
+        ax.errorbar(ns, sketch_means, yerr=sketch_stds, fmt='o', label=f'{algo}')
+        ax.errorbar(ns, krank_means, yerr=krank_stds, fmt='s', label=f'{algo} rank k')
     ax.set_xlabel('$n$')
     ax.set_ylabel('Runtime [s]')
     ax.legend()
@@ -106,6 +114,8 @@ def cores_variation( par_data_dict, ns_cores ):
     n_large = par_data_dict['parameters']['n_large']
     l_small = par_data_dict['parameters']['l_small']
     l_large = par_data_dict['parameters']['l_large']
+    k_small = par_data_dict['parameters']['k_small']
+    k_large = par_data_dict['parameters']['k_large']
     algos = ['SRHT', 'Gaussian']
     fmts = ['o', 's']
     cols = ['tab:blue', 'tab:orange']
@@ -116,12 +126,14 @@ def cores_variation( par_data_dict, ns_cores ):
         means_large = np.zeros((len(ns_cores)))
         stds_large = np.zeros((len(ns_cores)))
         for i, n_cores in enumerate(ns_cores):
-            means_small[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'n={n_small}_l={l_small}_mean']
-            stds_small[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'n={n_small}_l={l_small}_std']
-            means_large[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'n={n_large}_l={l_large}_mean']
-            stds_large[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'n={n_large}_l={l_large}_std']
-        ax.errorbar(ns_cores, means_small, yerr=stds_small, fmt=fmts[j], label=f'n={n_small}, l={l_small}', color=cols[0])
-        ax.errorbar(ns_cores, means_large, yerr=stds_large, fmt=fmts[j], label=f'n={n_large}, l={l_large}', color=cols[1])
+            lab_small = f'n={n_small}_l={l_small}_k={k_small}'
+            lab_large = f'n={n_large}_l={l_large}_k={k_large}'
+            means_small[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'sketch_ts_{lab_small}_mean']
+            stds_small[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'sketch_ts_{lab_small}_std']
+            means_large[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'sketch_ts_{k_large}_mean']
+            stds_large[i] = par_data_dict[f'{algo}_cores={n_cores}'][f'sketch_ts_{k_large}_std']
+        ax.errorbar(ns_cores, means_small, yerr=stds_small, fmt=fmts[j], label=f'{lab_small}', color=cols[0])
+        ax.errorbar(ns_cores, means_large, yerr=stds_large, fmt=fmts[j], label=f'{lab_large}', color=cols[1])
     ax.set_xlabel('Number of cores')
     ax.set_ylabel('Runtime [s]')
     ax.set_title('Gaussian: circles, SRHT: squares')
@@ -160,4 +172,9 @@ if __name__ == '__main__':
     seq_data_dict, par_data_dict = import_data()
     l_variation( seq_data_dict )
     n_variation( seq_data_dict )
-    #cores_variation( par_data_dict, [4] )
+    cores_variation( par_data_dict, [4,16] )
+
+#  with h5py.File(f'{output_file}.h5', 'r') as f:
+#       print(f['Gaussian'].keys())
+#        print(f['SRHT'].keys())
+        
