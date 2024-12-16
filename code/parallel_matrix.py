@@ -104,7 +104,7 @@ def full_multiply( A, B, comm ):
         l = B.shape[1]
     A_ij = split_matrix(A, comm)
     B_j = get_A_i_to_column_i(B, comm)
-    return multiply( A_ij, None, B_j, n, l, comm, only_C=True )
+    return multiply( A_ij, None, B_j, n, l, comm, only_C=True, half_numpy=False )
 
 def multiply( A_ij, B_i_T, B_j, n, l, comm, only_C=False, half_numpy=True ):
     '''

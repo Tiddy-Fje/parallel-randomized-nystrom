@@ -11,13 +11,13 @@ size = comm.Get_size()
 seed_factor = 1234
 n_rep = 3
 
-log2_n_small = 8
+log2_n_small = 10
 n_small = 2 ** log2_n_small
-l_small = 2 ** (log2_n_small-2)
+l_small = 2 ** (log2_n_small-3)
 
 log2_n_large = 12
 n_large = 2 ** log2_n_large
-l_large = 2 ** (log2_n_large-2)
+l_large = 2 ** (log2_n_large-3)
 
 output_file = '../output/parallel_performance'
 if rank == 0:
@@ -34,7 +34,7 @@ if rank == 0:
             f['parameters'].create_dataset('l_large', data=l_large)
 
 r_small = 3 * n_small // 4
-k_small = l_small // 2
+k_small = l_small // 4
 A_ij = synthetic_matrix(n_small, r_small, 'fast', 'exponential')
 if size > 1:
     A_ij = split_matrix(A_ij, comm)
@@ -42,7 +42,7 @@ analysis(A_ij, n_small, l_small, k_small, 'Gaussian', seed_factor, comm, n_rep, 
 analysis(A_ij, n_small, l_small, k_small, 'SRHT', seed_factor, comm, n_rep, output_file)
 
 r_large = 3 * n_large // 4
-k_large = l_large // 2
+k_large = l_large // 4
 B_ij = synthetic_matrix(n_large, r_large, 'fast', 'exponential')
 if size > 1:
     B_ij = split_matrix(B_ij, comm)
