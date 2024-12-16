@@ -310,6 +310,7 @@ def build_Q( Y_s, m, n, comm ):
 
 def build_Q_bis( Y_s, comm ):
     # adapted from exercise session number 6
+    # https://moodle.epfl.ch/pluginfile.php/3396647/mod_resource/content/1/Series6_solutions.pdf
     rank = comm.Get_rank()
     size = comm.Get_size()
     n = Y_s[0].shape[1]
