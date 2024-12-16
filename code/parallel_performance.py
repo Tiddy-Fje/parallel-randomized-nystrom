@@ -16,7 +16,7 @@ n_small = 2 ** log2_n_small
 l_small = 2 ** (log2_n_small-3)
 k_small = l_small // 4
 
-log2_n_large = 12
+log2_n_large = 13
 n_large = 2 ** log2_n_large
 l_large = 2 ** (log2_n_large-3)
 k_large = l_large // 4

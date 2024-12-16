@@ -308,10 +308,10 @@ def build_Q( Y_s, m, n, comm ):
             # Gather assembles the object by sorting received data by rank  
     return current_Q
 
-def build_Q_bis( Y_s, m, n, comm ):
+def build_Q_bis( Y_s, comm ):
+    # adapted from exercise session number 6
     rank = comm.Get_rank()
     size = comm.Get_size()
-    m = Y_s[0].shape[0]*size
     n = Y_s[0].shape[1]
     Q = None
 
@@ -319,24 +319,21 @@ def build_Q_bis( Y_s, m, n, comm ):
         Q = np.eye(n, n)
         Q = Y_s[-1]@Q
         Y_s.pop()
-    # Start iterating through the tree backwards
+
     for k in range(int(np.log2(size))-1, -1, -1):
         color = rank%(2**k)
         key = rank//(2**k)
         comm_branch = comm.Split(color = color, key = key)
-        rank_branch = comm_branch.Get_rank()
         if( color == 0):
-            # We scatter the columns of the Q we have
             Qrows = np.empty((n,n), dtype = 'd')
             comm_branch.Scatterv(Q, Qrows, root = 0)
-            # Local multiplication
+            
             Qlocal = Y_s[-1]@Qrows
             Y_s.pop()
-            # Gather
+
             Q = comm_branch.gather(Qlocal, root = 0)
             if rank == 0:
                 Q = np.concatenate(Q, axis = 0)
-                print(Q.shape)
         comm_branch.Free()
     return Q
 
@@ -347,7 +344,7 @@ if __name__ == '__main__':
     import time
 
     A, B = None, None
-    m, n = 2**16, 2**9
+    m, n = 2**13, 2**8
     if rank == 0:
         A = np.random.rand(m,n)
         B = np.random.rand(m,n)
@@ -361,7 +358,7 @@ if __name__ == '__main__':
     if rank == 0:
         print("Time for TSQR: ", end-start)
     start = time.perf_counter()
-    Q = build_Q_bis(Y_s, m, n, comm)
+    Q = build_Q_bis(Y_s, comm)
     comm.barrier()
     end = time.perf_counter()
     if rank == 0:

@@ -199,7 +199,7 @@ def rank_k_approx( B, C, n, k, comm, return_A_k=True ):
     if flag:
         Z_l, shape = pm.row_distrib_mat( Z, comm, return_shape=True)
         Ys, R = pm.TSQR( Z_l, comm )
-        Q = pm.build_Q( Ys, shape[0], shape[1], comm )
+        Q = pm.build_Q_bis( Ys, comm )
         #Q, R = pm.parallel_CQR( Z_l, shape[0], shape[1], comm ) 
         if rank==0: 
             U, s, V = np.linalg.svd(R, full_matrices=False) # only rank 0 has QR results
@@ -210,7 +210,7 @@ def rank_k_approx( B, C, n, k, comm, return_A_k=True ):
         tsqr_start = time.perf_counter()
         Ys, R = pm.TSQR( C_l, comm )
         tsqr_end = time.perf_counter()
-        Q = pm.build_Q( Ys, shape[0], shape[1], comm ) # THIS TAKES A LOT OF TIME
+        Q = pm.build_Q_bis( Ys, comm ) # THIS TAKES A LOT OF TIME
         #Q, R = pm.parallel_CQR( C_l, shape[0], shape[1], comm ) # 
         if rank == 0:    
             S_2 = lambdas 
