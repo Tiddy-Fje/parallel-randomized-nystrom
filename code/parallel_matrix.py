@@ -321,20 +321,16 @@ def build_Q_bis( Y_s, m, n, comm ):
         Y_s.pop()
     # Start iterating through the tree backwards
     for k in range(int(np.log2(size))-1, -1, -1):
-        print("k: ", k)
         color = rank%(2**k)
         key = rank//(2**k)
         comm_branch = comm.Split(color = color, key = key)
         rank_branch = comm_branch.Get_rank()
-        print("Rank: ", rank, " color: ", color, " new rank: ", rank_branch)
         if( color == 0):
             # We scatter the columns of the Q we have
             Qrows = np.empty((n,n), dtype = 'd')
             comm_branch.Scatterv(Q, Qrows, root = 0)
             # Local multiplication
-            print("size of Qrows: ", Qrows.shape)
             Qlocal = Y_s[-1]@Qrows
-            print("size of Qlocal: ", Qlocal.shape)
             Y_s.pop()
             # Gather
             Q = comm_branch.gather(Qlocal, root = 0)
@@ -351,7 +347,7 @@ if __name__ == '__main__':
     import time
 
     A, B = None, None
-    m, n = 2**14, 2**8
+    m, n = 2**16, 2**9
     if rank == 0:
         A = np.random.rand(m,n)
         B = np.random.rand(m,n)
