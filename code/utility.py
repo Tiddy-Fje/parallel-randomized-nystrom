@@ -96,6 +96,8 @@ def print_results(error_nuc, wt, cholesky_success, random_seed):
 
 
 if __name__ == '__main__':
-    np.random.seed(10)
-    x = np.random.rand(8)
-    print(3**x)
+    def func(**kwargs):
+        print(kwargs)
+
+    func(a=1, b=2, c=3)
+    

@@ -1,7 +1,7 @@
 import parallel_matrix as pm
 import numpy as np
 from mpi4py import MPI
-from scipy.linalg import solve_triangular, hadamard, ldl
+from scipy.linalg import solve_triangular, ldl
 from data_generation import synthetic_matrix, MNIST_matrix
 import time
 from utility import fwht_mat

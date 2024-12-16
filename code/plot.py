@@ -57,13 +57,19 @@ def l_variation( seq_data_dict ):
     algos.remove('parameters')
     fig, ax = plt.subplots()
     for algo in algos:
-        means = np.zeros((len(ls)))
-        stds = np.zeros((len(ls)))
+        sketch_means = np.zeros((len(ls)))
+        sketch_stds = np.zeros((len(ls)))
+        krank_means = np.zeros((len(ls)))
+        krank_stds = np.zeros((len(ls)))
         #print(seq_data_dict[algo].keys())
         for i,l in enumerate(ls):
-            means[i] = seq_data_dict[algo][f'n={n}_l={l}_mean']
-            stds[i] = seq_data_dict[algo][f'n={n}_l={l}_std']
-        ax.errorbar(ls, means, yerr=stds, fmt='o', label=f'{algo}')
+            lab = f'n={n}_l={l}_k={k}'
+            sketch_means[i] = seq_data_dict[algo][f'sketch_ts_{lab}_mean']
+            sketch_stds[i] = seq_data_dict[algo][f'sketch_ts_{lab}_std']
+            krank_means[i] = seq_data_dict[algo][f'k_rank_ts_{lab}_mean']
+            krank_stds[i] = seq_data_dict[algo][f'k_rank_ts_{lab}_std']
+        ax.errorbar(ls, sketch_means, yerr=sketch_stds, fmt='o', label=f'{algo}')
+        ax.errorbar(ls, krank_means, yerr=krank_stds, fmt='s', label=f'{algo} rank k')
     ax.set_xlabel('$l$')
     ax.set_ylabel('Runtime [s]')
     ax.legend()

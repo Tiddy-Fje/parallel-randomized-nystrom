@@ -20,7 +20,6 @@ def fwht_mat(X):
     return H @ X
 
 
-
 def compute_relative_error(A, B,C, ks, normAnuc):
     errors = []
     n=len(A)
