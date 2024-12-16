@@ -9,9 +9,9 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 
 seed_factor = 1234
-n_rep = 3 + 1
+n_rep = 1 #+ 3
 
-log2_n_small = 10
+log2_n_small = 11
 n_small = 2 ** log2_n_small
 l_small = 2 ** (log2_n_small-6)
 k_small = l_small // 4
