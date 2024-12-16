@@ -307,3 +307,68 @@ def build_Q( Y_s, m, n, comm ):
                 current_Q = Q_k @ current_Q
             # Gather assembles the object by sorting received data by rank  
     return current_Q
+
+def build_Q_bis( Y_s, m, n, comm ):
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    m = Y_s[0].shape[0]*size
+    n = Y_s[0].shape[1]
+    Q = None
+
+    if rank == 0:
+        Q = np.eye(n, n)
+        Q = Y_s[-1]@Q
+        Y_s.pop()
+    # Start iterating through the tree backwards
+    for k in range(int(np.log2(size))-1, -1, -1):
+        print("k: ", k)
+        color = rank%(2**k)
+        key = rank//(2**k)
+        comm_branch = comm.Split(color = color, key = key)
+        rank_branch = comm_branch.Get_rank()
+        print("Rank: ", rank, " color: ", color, " new rank: ", rank_branch)
+        if( color == 0):
+            # We scatter the columns of the Q we have
+            Qrows = np.empty((n,n), dtype = 'd')
+            comm_branch.Scatterv(Q, Qrows, root = 0)
+            # Local multiplication
+            print("size of Qrows: ", Qrows.shape)
+            Qlocal = Y_s[-1]@Qrows
+            print("size of Qlocal: ", Qlocal.shape)
+            Y_s.pop()
+            # Gather
+            Q = comm_branch.gather(Qlocal, root = 0)
+            if rank == 0:
+                Q = np.concatenate(Q, axis = 0)
+                print(Q.shape)
+        comm_branch.Free()
+    return Q
+
+if __name__ == '__main__':
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    import time
+
+    A, B = None, None
+    m, n = 2**14, 2**8
+    if rank == 0:
+        A = np.random.rand(m,n)
+        B = np.random.rand(m,n)
+    
+    A_l = row_distrib_mat(A, comm)
+
+    start = time.perf_counter()
+    Y_s, R = TSQR(A_l, comm)
+    comm.barrier()
+    end = time.perf_counter()
+    if rank == 0:
+        print("Time for TSQR: ", end-start)
+    start = time.perf_counter()
+    Q = build_Q_bis(Y_s, m, n, comm)
+    comm.barrier()
+    end = time.perf_counter()
+    if rank == 0:
+        print("Time for building Q: ", end-start)
+    if rank == 0:
+        print(np.allclose(Q.T@Q, np.eye(Q.shape[1])))
