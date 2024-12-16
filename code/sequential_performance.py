@@ -13,19 +13,15 @@ def analysis( A_ij, n, l, k, sketch_type, seed_factor, comm, n_rep, output_file 
         print(f'Results for {sketch_type} w/ n={n} l={l} k={k}')
         print(f'Max sketch ts : {max_sketch_ts}')
         print(f'Max k_rank ts : {max_k_rank_ts}')
-        with h5py.File(f'{output_file}.h5', 'a') as f:
-            cores_lab = ''
-            if 'parallel' in output_file:
-                cores_lab = f'_cores={size}'
-            
+        with h5py.File(f'{output_file}.h5', 'a') as f:            
             data_lab = f'n={n}_l={l}_k={k}'
             # if dataset already exists, skip the writing
-            if f'sketch_ts_{data_lab}_mean' in f[f'{sketch_type}{cores_lab}'].keys():
+            if f'sketch_ts_{data_lab}_mean' in f[f'{sketch_type}'].keys():
                 return
-            f[f'{sketch_type}{cores_lab}'].create_dataset(f'sketch_ts_{data_lab}_mean', data=np.mean(max_sketch_ts))
-            f[f'{sketch_type}{cores_lab}'].create_dataset(f'sketch_ts_{data_lab}_std', data=np.std(max_sketch_ts))
-            f[f'{sketch_type}{cores_lab}'].create_dataset(f'k_rank_ts_{data_lab}_mean', data=np.mean(max_k_rank_ts))
-            f[f'{sketch_type}{cores_lab}'].create_dataset(f'k_rank_ts_{data_lab}_std', data=np.std(max_k_rank_ts))
+            f[f'{sketch_type}'].create_dataset(f'sketch_ts_{data_lab}_mean', data=np.mean(max_sketch_ts))
+            f[f'{sketch_type}'].create_dataset(f'sketch_ts_{data_lab}_std', data=np.std(max_sketch_ts))
+            f[f'{sketch_type}'].create_dataset(f'k_rank_ts_{data_lab}_mean', data=np.mean(max_k_rank_ts))
+            f[f'{sketch_type}'].create_dataset(f'k_rank_ts_{data_lab}_std', data=np.std(max_k_rank_ts))
     return
 
 if __name__ == '__main__':

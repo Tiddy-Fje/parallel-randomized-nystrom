@@ -345,7 +345,7 @@ if __name__ == '__main__':
     import time
 
     A, B = None, None
-    m, n = 2**13, 2**8
+    m, n = 2**11, 2**8
     if rank == 0:
         A = np.random.rand(m,n)
         B = np.random.rand(m,n)

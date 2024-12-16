@@ -9,33 +9,32 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 
 seed_factor = 1234
-n_rep = 3
+n_rep = 3 + 1
 
 log2_n_small = 10
 n_small = 2 ** log2_n_small
-l_small = 2 ** (log2_n_small-3)
+l_small = 2 ** (log2_n_small-6)
 k_small = l_small // 4
 
 log2_n_large = 13
 n_large = 2 ** log2_n_large
-l_large = 2 ** (log2_n_large-3)
+l_large = 2 ** (log2_n_large-6)
 k_large = l_large // 4
 
-output_file = '../output/parallel_performance'
+output_file = f'../output/parallel_performance_ncores_{size}'
 if rank == 0:
     with h5py.File(f'{output_file}.h5', 'w') as f:
-        f.create_group(f'Gaussian_cores={size}')
-        f.create_group(f'SRHT_cores={size}')
-        if not f'parameters' in f.keys():
-            f.create_group('parameters')
-            f['parameters'].create_dataset('n_rep', data=n_rep)
-            f['parameters'].create_dataset('seed_factor', data=seed_factor)
-            f['parameters'].create_dataset('n_small', data=n_small)
-            f['parameters'].create_dataset('n_large', data=n_large)
-            f['parameters'].create_dataset('l_small', data=l_small)
-            f['parameters'].create_dataset('l_large', data=l_large)
-            f['parameters'].create_dataset('k_small', data=k_small)
-            f['parameters'].create_dataset('k_large', data=k_large)
+        f.create_group(f'Gaussian')
+        f.create_group(f'SRHT')
+        f.create_group('parameters')
+        f['parameters'].create_dataset('n_rep', data=n_rep)
+        f['parameters'].create_dataset('seed_factor', data=seed_factor)
+        f['parameters'].create_dataset('n_small', data=n_small)
+        f['parameters'].create_dataset('n_large', data=n_large)
+        f['parameters'].create_dataset('l_small', data=l_small)
+        f['parameters'].create_dataset('l_large', data=l_large)
+        f['parameters'].create_dataset('k_small', data=k_small)
+        f['parameters'].create_dataset('k_large', data=k_large)
 
 r_small = 3 * n_small // 4
 

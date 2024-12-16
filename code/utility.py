@@ -96,8 +96,8 @@ def print_results(error_nuc, wt, cholesky_success, random_seed):
 
 
 if __name__ == '__main__':
-    def func(**kwargs):
-        print(kwargs)
-
-    func(a=1, b=2, c=3)
+    s = 16
+    k = s - 6
+    a = 6 * np.ones((2**s, 2**k))
+    print(a.shape)
     
