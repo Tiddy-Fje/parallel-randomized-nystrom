@@ -120,15 +120,16 @@ def cores_variation( par_data_dict, ns_cores ):
     fmts = ['o', 's']
     cols = ['tab:blue', 'tab:orange']
     fig, ax = plt.subplots(1,2, figsize=(12,6))
+    n_cores = len(ns_cores)
     for j,algo in enumerate(algos):
-        sketch_means_small = np.zeros((len(ns_cores)))
-        sketch_stds_small = np.zeros((len(ns_cores)))
-        sketch_means_large = np.zeros((len(ns_cores)))
-        sketch_stds_large = np.zeros((len(ns_cores)))
-        krank_means_small = np.zeros((len(ns_cores)))
-        krank_stds_small = np.zeros((len(ns_cores)))
-        krank_means_large = np.zeros((len(ns_cores)))
-        krank_stds_large = np.zeros((len(ns_cores)))
+        sketch_means_small = np.zeros(n_cores)
+        sketch_stds_small = np.zeros(n_cores)
+        sketch_means_large = np.zeros(n_cores)
+        sketch_stds_large = np.zeros(n_cores)
+        krank_means_small = np.zeros(n_cores)
+        krank_stds_small = np.zeros(n_cores)
+        krank_means_large = np.zeros(n_cores)
+        krank_stds_large = np.zeros(n_cores)
         for i, n_cores in enumerate(ns_cores):
             lab_small = f'n={n_small}_l={l_small}_k={k_small}'
             lab_large = f'n={n_large}_l={l_large}_k={k_large}'
