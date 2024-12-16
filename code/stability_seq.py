@@ -67,7 +67,7 @@ if __name__ == "__main__":
     log2_l_min, log2_l_max = 6, 9
     ls = 2 ** np.arange(log2_l_min, log2_l_max + 1).astype(int)
     ks = np.linspace(25, max(ls), 10).astype(int)
-    output_dir = "./results"
+    output_dir = "../figures"
 
     
     datasets = [

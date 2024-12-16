@@ -142,7 +142,7 @@ def seq_rank_k_approx( B, C, n, k, alternative=False, return_A_k=True ):
     B : np.ndarray, A @ Omega
     C : np.ndarray, Omega.T @ A @ Omega
     '''
-    assert len(B) > k, 'We should have l>k'
+    assert len(B) >= k, 'We should have l>=k'
 
     U_hat = None
     S_2 = None

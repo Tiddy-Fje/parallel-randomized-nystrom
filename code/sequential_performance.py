@@ -25,7 +25,7 @@ def analysis( A_ij, n, l, k, sketch_type, seed_factor, comm, n_rep, output_file 
     return
 
 if __name__ == '__main__':
-    n_rep = 2
+    n_rep = 3 + 1
 
     log2_l_min = 7
     log2_l_max = 10
@@ -33,12 +33,12 @@ if __name__ == '__main__':
     ls = 2 ** log2_ls
     n = 2 ** (log2_l_max+2)
 
-    log2_n_min = 10
-    log2_n_max = 13
+    log2_n_min = 8
+    log2_n_max = 11
     log2_ns = np.arange(log2_n_min, log2_n_max+1).astype(int)
     ns = 2 ** log2_ns
-    l = 2 ** (log2_n_min-2)
-    k = l // 3
+    l = 2 ** (log2_n_min-1)
+    k = l // 2
 
     seed_factor = 1234
 
