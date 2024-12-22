@@ -5,7 +5,7 @@
 \contentsline {section}{\numberline {3}Stability analysis}{1}{section.3}%
 \contentsline {section}{\numberline {4}Parallelisation}{1}{section.4}%
 \contentsline {section}{\numberline {5}Experimental procedure}{1}{section.5}%
-\contentsline {section}{\numberline {6}Algorithm Performance}{1}{section.6}%
-\contentsline {subsection}{\numberline {6.1}Sequential Performance}{1}{subsection.6.1}%
-\contentsline {subsection}{\numberline {6.2}Parallel Performance}{1}{subsection.6.2}%
-\contentsline {section}{\numberline {7}Conclusion}{2}{section.7}%
+\contentsline {section}{\numberline {6}Algorithm Performance}{2}{section.6}%
+\contentsline {subsection}{\numberline {6.1}Sequential Performance}{2}{subsection.6.1}%
+\contentsline {subsection}{\numberline {6.2}Parallel Performance}{3}{subsection.6.2}%
+\contentsline {section}{\numberline {7}Conclusion}{4}{section.7}%

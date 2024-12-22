@@ -16,6 +16,7 @@
 	\setcounter{page}{1}
 
 	\section{Introduction}
+		\lipsum[1]
 	\section{Algorithms}
         \subsection{Sketching Matrices}
         \subsection{Randomized Nyström low rank approximation}
@@ -23,13 +24,39 @@
 		- bullet points about comments to include 
 	\section{Parallelisation}
 	\section{Experimental procedure}
-		- bullet points about comments to include 
+		- averaging to increase precision of results
+		- when running in parallel, was simited by number of cores $p=2^{2s}$ with $s\in\mathbb{N}$ (due to perfect square constraint of the paralelised matrix multiplication and the SHRT algorithm using the Hadamard transform), so we ran results for 1,4,16,64
+		- ran results on the Helvetios cluster 
+		- $k$ was taken often around $n/20$ as we deemed this value relevant for real applications
+		- n was made vary as powers of $2$ due to the Hadamard transformation while $l$ was taken logaritmically spaced just to make the visuals more easy to interpret  
 	\section{Algorithm Performance}
-		- bullet points about comments to include 
         \subsection{Sequential Performance}
-			- bullet points about comments to include 
+		- in general (both plots) observe that k rank approximation represents minority of runtime (as expected as of order $k^3 +nk^2$). Indeed for shown examples represents at most 10\%. This would be different if one were to take big values of $k$. Also does not really seem to depend on sketching method which makes sense given the computations are the same regardless of which sketching method was used to obtain the B and C matrices
+		\begin{figure}[htb]       
+			\centering             
+				\vspace{0em}
+				\includegraphics[width=.975\textwidth]{runtimes_l_n_variation}
+				\caption{Runtimes associated to the tested sketching methods : as a function of $l$ (left) and as a function of $n$ (right). Runtimes are broken down in that associated to the computation of $A\Omega,\Omega^T A\Omega$ and that associated to the computation of the $k$ rank approximation.}
+				\label{fig:runtimes-l-n-variation}
+		\end{figure}
+
+		- different behaviours as a function of l and n : as a function of l SRHT looks almost flat, having really slow increase, while gaussian increases steadily given its complexity is or order $nl^2 + ln^2$. This gives advantage for SRHT if we are embedding "dense spaces" as it scales much better than gaussian as function of l. For n : both algos show significant increase, but SRHT shows faster runtime growth. This makes sense due to extra $\log_2(n)$ term in its complexity. This would give advantage to gaussian sketching if we are dealing with sparse information within really high dimensional spaces.
+		- 
         \subsection{Parallel Performance}
-			- bullet points about comments to include 
+		- selected $l=n/64$ given we are using TSQR for the QR factorisation and we need the matrix to be tall-skinny to actually observe a speed-up. To have a good speed-up for a bigger $l$, while keeping numerical stability for ill-conditionned matrices another algo should be used.
+
+		- for small example : some speed-up is observed as a function of number of cores but communication costs are non neglectable and even dominate the total runtime for p=64. This is expected as the computation is rather small to be run in parallel. The runtimes for the k-rank are the most affected as these represented the smallest part of the computation to start with. for the specific values selected the gaussian sketching is faster (indeed $l$ is taken only as a small fraction of $n$).
+
+		\begin{figure}[htb]       
+			\centering             
+				\vspace{0em}
+				\includegraphics[width=.85\textwidth]{runtimes_cores_variation}
+				\caption{Runtimes associated to the tested sketching methods as a function of the number of cores : for a ``small'' example (left) and a ``large'' one (right). Runtimes are broken down in that associated to the computation of $A\Omega,\Omega^T A\Omega$ and that associated to the computation of the $k$ rank approximation.}
+				\label{fig:runtimes-cores-variation}
+		\end{figure}
+		- for the large : communication is not much of an issue, and big speed ups (quasi linear) are observed for the sketching computation. This means the parallelization is successful and scales well for big computations. We can see the speedup is not as good for k-rank partly because the computation was smaller to start with. The fact that the matrix is not that tall-skinny is also expected to have contributed to the low speed-up of that part.
+		- 
+
 	\section{Conclusion}
 	\section*{Aknowledegments}
 	\section*{References}
