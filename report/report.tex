@@ -1,6 +1,5 @@
 \documentclass[a4paper, 12pt,oneside]{article} 
 %\documentclass[a4paper, 12pt,oneside,draft]{article} 
-%\usepackage{preamble}
 \usepackage{preamble_bis}
 %--------------------- ACTUAL FILE ---------------------- %
 \begin{document} 
@@ -20,9 +19,87 @@
 	\section{Algorithms}
         \subsection{Sketching Matrices}
         \subsection{Randomized Nyström low rank approximation}
+		The goal of this project is to study the randomized Nyström algorithm for computing a rank- $k$ approximation of a matrix $A \in \mathbb{R}^{n \times n}$ that is symmetric positive semidefinite. Given a sketching matrix $\Omega \in \mathbb{R}^{n \times l}$, where $l$ is the sketch dimension, $l>k$, the randomized Nyström approximation relies on the following formula:
+
+		$$
+		A_{N y s t}=(A \Omega)\left(\Omega^T A \Omega\right)^{+}\left(\Omega^T A\right)
+		$$
+		
+		where $\left(\Omega^T A \Omega\right)^{+}$denotes the pseudoinverse of $\Omega^T A \Omega$. This formula provides an approximation of $A$ of rank at most $l$. Several solutions are possible for computing a rank-k approximation from $A_{N_{y s t}}$, that we denote as $[A_{N_{y s t}}]_k$. One consists of computing a rank-k decomposition of the matrix $B=\Omega^T A \Omega$, while another one consists of computing a rank-k truncation of the Nyström approximation $A_{N y n t}$. The second approach is considered for this project. Different solutions are proposed in the literature, see one solution in the slides from the lecture on Randomized algorithms for low rank matrix approximation, where the algorithm relies on the Cholesky decomposition or the eigenvalue decomposition of $B$. Other reference is 44]. Two different data sets should be used to validate your considered randomized Nyström low rank approximation, that are described later on. Hence this project should allow you to identify a randomized algorithm that is numerically stable for the considered data sets and scales reasonably well in parallel.
+	\section{Data sets}
+	We consider two different types of data sets in this project. The first is synthetic and is a part of those described in section 5 of [4]. More precisely, we consider polynomial and exponential decay diagonal matrices with different decay rates, which we call slow, medium and fast in the rest of the report.
+	
+	The second data set we use  described for example in [1] (section 4). It consists of a similarity matrix build from the MNIST dataset with help of the radial basis function $e^{-\left\|x_i-x_j\right\|^2 / c^2}$. With the first $n$ rows of the MNIST dataset leads to a dense $n\times n$ matrix $A$. The parameter $c$ can be varied to tune how much to penalise dissimilarity. To make the exploration of this value simpler, we decided to first normalize the MNIST dataset by dividing the entries by the maximal intensity across the dataset. 
+	
+	[ADRESS THIS] The dimension $n$ should be taken depending on what your code can support in terms of memory consumption.
 	\section{Stability analysis}
 		- bullet points about comments to include 
 	\section{Parallelisation}
+	Describe how you parallelize randomized Nyström and provide pseudo-code of the parallel algorithm. For the parallelization, the matrix $A$ should be distributed among processors by using a two-dimensional block distribution while the matrix $\Omega$ should be distributed using a block row distribution. You can consider that the number of processors is a power of 2 such that you can easily distribute the matrices among processors. For example, when $P=\sqrt{P} \times \sqrt{P}=9$, the matrices $A$ and $\Omega$ are distributed as:
+
+	$$
+	A=\left(\begin{array}{lll}
+	A_{11} & A_{12} & A_{13} \\
+	A_{21} & A_{22} & A_{23} \\
+	A_{31} & A_{32} & A_{33}
+	\end{array}\right), \quad \Omega=\left(\begin{array}{l}
+	\Omega_1 \\
+	\Omega_2 \\
+	\Omega_3
+	\end{array}\right)
+	$$
+
+	$$
+	B=\Omega^T A \Omega=\left(\begin{array}{lll}
+		\Omega_1^T & \Omega_2^T & \Omega_3^T
+		\end{array}\right)\left(\begin{array}{lll}
+		A_{11} & A_{12} & A_{13} \\
+		A_{21} & A_{22} & A_{23} \\
+		A_{31} & A_{32} & A_{33}
+		\end{array}\right)\left(\begin{array}{l}
+		\Omega_1 \\
+		\Omega_2 \\
+		\Omega_3
+		\end{array}\right)
+	$$
+
+
+	Compute $C=A \Omega, C \in \mathbb{R}^{m \times I}$
+	Compute $B=\Omega^T C, B \in \mathbb{R}^{I \times I}$
+	Compute truncated rank-k eigenvalue decomposition of $B=U \wedge U^T$ $B_k^{+}=U(:, 1: k) \wedge(1: k, 1: k)^{+} U(:, 1: k)^T$ rank-k approximation of $B$
+	Compute thin QR decomposition $C=Q R$
+	Compute eigendecomposition $R B_k^{+} R^T=U_k \Lambda_k U_k^T$
+	Compute $\hat{U}_k=Q U_k$
+	Output factorization $A_{N y s t, k}=\hat{U}_k \Lambda_k \hat{U}_k^T$
+	\begin{algorithm}
+		\caption{Randomized Nystr\"om algorithm. The syntax was adapted from this Overleaf example.}\label{alg:cap}
+		\begin{algorithmic}
+		\Require $n \geq 0$
+		\Ensure $y = x^n$
+		\State $C \gets A \Omega$
+		\State $B \gets \Omega^T C$
+		\State $L, Failed \gets Cholesky(B)$
+		\If{Failed}
+			\State $U, \Lambda \gets EigDecomp(B)$
+		\Else{}
+			\State $Z \gets C L^{-T}$ \Comment{Substitution : No  computation of $(L^T)^{-1}$}
+			\State $Q, R \gets \text{QR}(Z)$
+			\State $U_k, \Sigma_k, V_k \gets \text{TruncSVD}(R)$
+			\State $\hat{U}_k \gets Q U_k$
+			\State $[A_{N y s t}]_k \gets \hat{U}_k \Sigma_k^2 \hat{U}_k^T$
+		\EndIf
+		%\While{$N \neq 0$}
+		%	\If{$N$ is even}
+		%		\State $X \gets X \times X$
+		%		\State $N \gets \frac{N}{2}$  \Comment{This is a comment}
+		%	\ElsIf{$N$ is odd}
+		%		\State $y \gets y \times X$
+		%		\State $N \gets N - 1$
+		%	\EndIf
+		%\EndWhile
+		\end{algorithmic}
+		\end{algorithm}
+	
 	\section{Experimental procedure}
 		- averaging to increase precision of results
 		- when running in parallel, was simited by number of cores $p=2^{2s}$ with $s\in\mathbb{N}$ (due to perfect square constraint of the paralelised matrix multiplication and the SHRT algorithm using the Hadamard transform), so we ran results for 1,4,16,64
