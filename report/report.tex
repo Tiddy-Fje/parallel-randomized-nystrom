@@ -63,40 +63,27 @@
 		\end{array}\right)
 	$$
 
-
-	Compute $C=A \Omega, C \in \mathbb{R}^{m \times I}$
-	Compute $B=\Omega^T C, B \in \mathbb{R}^{I \times I}$
-	Compute truncated rank-k eigenvalue decomposition of $B=U \wedge U^T$ $B_k^{+}=U(:, 1: k) \wedge(1: k, 1: k)^{+} U(:, 1: k)^T$ rank-k approximation of $B$
-	Compute thin QR decomposition $C=Q R$
-	Compute eigendecomposition $R B_k^{+} R^T=U_k \Lambda_k U_k^T$
-	Compute $\hat{U}_k=Q U_k$
-	Output factorization $A_{N y s t, k}=\hat{U}_k \Lambda_k \hat{U}_k^T$
 	\begin{algorithm}
-		\caption{Randomized Nystr\"om algorithm. The syntax was adapted from this Overleaf example.}\label{alg:cap}
+		\caption{Randomized Nystr\"om algorithm. The syntax was adapted from this Overleaf example.}\label{alg:parallel-rand-nystrom}
 		\begin{algorithmic}
-		\Require $n \geq 0$
-		\Ensure $y = x^n$
+		\Require $A$ is an $n\times n$ symmetric positive semidefinite matrix, $\Omega$ is a sketching matrix of size $n\times l$, and $k$ is the rank of the approximation
+		\Ensure $[A_{N y s t}]_k$, the rank-$k$ randomized Nystr\"om approximation of $A$. 
 		\State $C \gets A \Omega$
 		\State $B \gets \Omega^T C$
-		\State $L, Failed \gets Cholesky(B)$
+		\State $L, \text{Failed} \gets \text{Cholesky}(B)$ \Comment{Locally on rank 0}
 		\If{Failed}
-			\State $U, \Lambda \gets EigDecomp(B)$
+			\State $U, \Lambda \gets \text{EigDecomp}(B)$ \Comment{Locally on rank 0}
+			\State $B_k^{+} \gets U(:,1:k) \Lambda(1: k, 1: k)^{+} U(:, 1: k)^T$
+			\State $Q, R \gets \text{QR}(C)$ \Comment{Using TSQR}
+			\State $\hat{U}_k \gets Q U(:, 1:k)$ \Comment{In parallel}
+			\State $[A_{N y s t}]_k \gets \hat{U}_k \Lambda(1: k, 1: k)^{+} \hat{U}_k^T$ \Comment{In parallel}
 		\Else{}
-			\State $Z \gets C L^{-T}$ \Comment{Substitution : No  computation of $(L^T)^{-1}$}
-			\State $Q, R \gets \text{QR}(Z)$
+			\State $Z \gets C L^{-T}$ \Comment{Computed by substitution : $(LZ^T)^T=C^T$}
+			\State $Q, R \gets \text{QR}(Z)$ \Comment{Using TSQR}
 			\State $U_k, \Sigma_k, V_k \gets \text{TruncSVD}(R)$
-			\State $\hat{U}_k \gets Q U_k$
-			\State $[A_{N y s t}]_k \gets \hat{U}_k \Sigma_k^2 \hat{U}_k^T$
+			\State $\hat{U}_k \gets Q U(:, 1:k)$ \Comment{In parallel}
+			\State $[A_{N y s t}]_k \gets \hat{U}_k \Sigma^2(1: k, 1: k) \hat{U}_k^T$ \Comment{In parallel}
 		\EndIf
-		%\While{$N \neq 0$}
-		%	\If{$N$ is even}
-		%		\State $X \gets X \times X$
-		%		\State $N \gets \frac{N}{2}$  \Comment{This is a comment}
-		%	\ElsIf{$N$ is odd}
-		%		\State $y \gets y \times X$
-		%		\State $N \gets N - 1$
-		%	\EndIf
-		%\EndWhile
 		\end{algorithmic}
 		\end{algorithm}
 	
