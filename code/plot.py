@@ -53,14 +53,15 @@ def import_data( n_cores ):
 
     return seq_data_dict, par_data_dict
 
-def l_variation( seq_data_dict ):
+def l_variation( seq_data_dict, ax = None ):
     '''
     Plot the average runtimes for the sequential algorithms as a function of l.
     '''
     ls = seq_data_dict['parameters']['ls']
     n = seq_data_dict['parameters']['n']
     k = seq_data_dict['parameters']['k']
-    fig, ax = plt.subplots()
+    if ax is None:
+        fig, ax = plt.subplots()
     for algo in ALGOS:
         sketch_means = np.zeros((len(ls)))
         sketch_stds = np.zeros((len(ls)))
@@ -79,18 +80,21 @@ def l_variation( seq_data_dict ):
     ax.set_ylabel('Runtime [s]')
     ax.set_title(f'$n={n}, k={k}$')
     ax.legend()
-    plt.savefig('../figures/runtimes_l_variation.png')
+
+    if ax is None:
+        plt.savefig('../figures/runtimes_l_variation.png')
     return
 
-def n_variation( seq_data_dict ):
+def n_variation( seq_data_dict, ax = None ):
     '''
     Plot the average runtimes for the sequential algorithms as a function of n.
     '''
     ns = seq_data_dict['parameters']['ns']
     l = seq_data_dict['parameters']['l']
     k = seq_data_dict['parameters']['k']
-    
-    fig, ax = plt.subplots()
+
+    if ax is None:
+        fig, ax = plt.subplots()
     for j, algo in enumerate(ALGOS):
         sketch_means = np.zeros((len(ns)))
         sketch_stds = np.zeros((len(ns)))
@@ -108,7 +112,9 @@ def n_variation( seq_data_dict ):
     ax.set_ylabel('Runtime [s]')
     ax.set_title(f'$l={l}, k={k}$')
     ax.legend()
-    plt.savefig('../figures/runtimes_n_variation.png')
+
+    if ax is None:
+        plt.savefig('../figures/runtimes_n_variation.png')
     return
 
 def cores_variation( par_data_dict, ns_cores ):
@@ -228,10 +234,12 @@ if __name__ == '__main__':
     ncores = [1,4,16,64]
     seq_data_dict, par_data_dict = import_data(ncores)
 
-    l_variation( seq_data_dict )
-    n_variation( seq_data_dict )
-    cores_variation( par_data_dict, ncores )
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5.5))  
+    l_variation( seq_data_dict, ax=axes[0] )
+    n_variation( seq_data_dict, ax=axes[1] )
+    plt.savefig('../figures/runtimes_l_n_variation.png')
+    #merge_figures('runtimes_l_variation', 'runtimes_n_variation', 'runtimes_l_n_variation')
 
-    merge_figures('runtimes_l_variation', 'runtimes_n_variation', 'runtimes_l_n_variation')
+    cores_variation( par_data_dict, ncores )
 
         
