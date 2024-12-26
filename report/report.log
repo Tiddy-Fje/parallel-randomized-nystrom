@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2022.7.21)  26 DEC 2024 14:36
+This is pdfTeX, Version 3.141592653-2.6-1.40.24 (TeX Live 2022) (preloaded format=pdflatex 2022.7.21)  26 DEC 2024 16:10
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1005,36 +1005,81 @@ l.31
        [1
 
 ]
-Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on input line 67.
- [2] [3]
-<../figures//runtimes_l_n_variation.png, id=128, 722.7pt x 397.485pt>
+Package hyperref Info: bookmark level for unknown algorithm defaults to 0 on input line 56.
+ [2] [3] [4
+pdfTeX warning (ext4): destination with the same identifier (name{ALG@line.1}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.116 	\section
+               {Experimental procedure}
+pdfTeX warning (ext4): destination with the same identifier (name{ALG@line.2}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.116 	\section
+               {Experimental procedure}
+pdfTeX warning (ext4): destination with the same identifier (name{ALG@line.3}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.116 	\section
+               {Experimental procedure}
+pdfTeX warning (ext4): destination with the same identifier (name{ALG@line.4}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.116 	\section
+               {Experimental procedure}
+pdfTeX warning (ext4): destination with the same identifier (name{ALG@line.5}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.116 	\section
+               {Experimental procedure}
+pdfTeX warning (ext4): destination with the same identifier (name{ALG@line.6}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.116 	\section
+               {Experimental procedure}
+pdfTeX warning (ext4): destination with the same identifier (name{ALG@line.7}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.116 	\section
+               {Experimental procedure}
+pdfTeX warning (ext4): destination with the same identifier (name{ALG@line.8}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.116 	\section
+               {Experimental procedure}
+pdfTeX warning (ext4): destination with the same identifier (name{ALG@line.9}) has been already used, duplicate ignored
+<argument> ...shipout:D \box_use:N \l_shipout_box 
+                                                  \__shipout_drop_firstpage_...
+l.116 	\section
+               {Experimental procedure}]
+<../figures//runtimes_l_n_variation.png, id=134, 722.7pt x 397.485pt>
 File: ../figures//runtimes_l_n_variation.png Graphic file (type png)
 <use ../figures//runtimes_l_n_variation.png>
-Package pdftex.def Info: ../figures//runtimes_l_n_variation.png  used on input line 102.
+Package pdftex.def Info: ../figures//runtimes_l_n_variation.png  used on input line 128.
 (pdftex.def)             Requested size: 406.4146pt x 223.53017pt.
- [4 <../figures//runtimes_l_n_variation.png>]
-<../figures//runtimes_cores_variation.png, id=136, 867.24pt x 433.62pt>
+ [5 <../figures//runtimes_l_n_variation.png>]
+<../figures//runtimes_cores_variation.png, id=143, 867.24pt x 433.62pt>
 File: ../figures//runtimes_cores_variation.png Graphic file (type png)
 <use ../figures//runtimes_cores_variation.png>
-Package pdftex.def Info: ../figures//runtimes_cores_variation.png  used on input line 117.
+Package pdftex.def Info: ../figures//runtimes_cores_variation.png  used on input line 143.
 (pdftex.def)             Requested size: 406.4146pt x 203.20593pt.
- [5 <../figures//runtimes_cores_variation.png>] [6] (./report.aux)
+ [6 <../figures//runtimes_cores_variation.png>] [7] (./report.aux)
 Package rerunfilecheck Info: File `report.out' has not changed.
 (rerunfilecheck)             Checksum: 8FE6078AC9F2E044C6518F5235D75268;1701.
  ) 
 Here is how much of TeX's memory you used:
- 30878 strings out of 478023
- 596520 string characters out of 5842667
- 953748 words of memory out of 5000000
+ 30880 strings out of 478023
+ 596537 string characters out of 5842667
+ 954748 words of memory out of 5000000
  48707 multiletter control sequences out of 15000+600000
  489279 words of font info for 84 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  99i,7n,103p,1220b,523s stack positions out of 10000i,1000n,20000p,200000b,200000s
-{c:/texlive/2022/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}<c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfbx1728.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfcc1440.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfcc1728.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfcc2074.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfrm1440.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfti1440.pfb>
-Output written on report.pdf (8 pages, 321027 bytes).
+{c:/texlive/2022/texmf-dist/fonts/enc/dvips/cm-super/cm-super-t1.enc}<c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmex10.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi12.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi6.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmmi8.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmr12.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmr6.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfbx1200.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfbx1440.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfbx1728.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfcc1440.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfcc1728.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfcc2074.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfrm0800.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfrm1200.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfrm1440.pfb><c:/texlive/2022/texmf-dist/fonts/type1/public/cm-super/sfti1440.pfb>
+Output written on report.pdf (9 pages, 343420 bytes).
 PDF statistics:
- 243 PDF objects out of 1000 (max. 8388607)
- 187 compressed objects within 2 object streams
- 41 named destinations out of 1000 (max. 500000)
+ 254 PDF objects out of 1000 (max. 8388607)
+ 195 compressed objects within 2 object streams
+ 43 named destinations out of 1000 (max. 500000)
  124 words of extra memory for PDF output out of 10000 (max. 10000000)
 

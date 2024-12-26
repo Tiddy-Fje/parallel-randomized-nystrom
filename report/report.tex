@@ -35,19 +35,45 @@
 	\section{Stability analysis}
 		- bullet points about comments to include 
 	\section{Parallelisation}
+	We parallelise the algorithm by distributing among the processors the computation of $A \Omega,\Omega^T A \Omega$, and all other matrix operations with complexities at least proportional to $n$. 
+	
+	The parallelisation of QR factorisation was the topic of the first project. We therefore included the relevant functions for it in the code folder. The parallelisation of matrix products was however implemented from scratch. It was done as 	
+	
+	$$
+	S=\left(\begin{array}{lll}
+	S_{0} & S_{01} & S_{02} \\
+	S_{10} & S_{11} & S_{12} \\
+	S_{20} & S_{21} & S_{22}
+	\end{array}\right), \quad \Omega=\left(\begin{array}{l}
+	T_0 \\
+	T_1 \\
+	T_2
+	\end{array}\right),
+	$$
+	with processor $i$ having the $i$-th row of $S$ and the $i$-th block row of $T$. Then
+
+	\begin{algorithm}
+		\caption{Computes the matrix product of two matrices $D$ and $E$ in parallel.}
+		\begin{algorithmic}
+		\Require $q$ is an integer and the square root of the number of processors, $D$ is an $m\times m$ matrix distributed such that processor $i$ has $D_{i//q,i\text{ mod }q}$ and $E$ is a $m\times n$ matrix distributed such that processor $i$ has $E_{i//q}$. FullProd is true if we also want to compute $E^TDE$.
+		\Ensure $F=DE$ (and $G=E^TF$ too if FullProd is true). 
+		\State $F_{ij} \gets P_{ij}E_j$
+		\If{\text{FullProd}}
+			\State $G_{ij} \gets E_i^FP_{ij}$
+		\EndIf		
+		\State Row-wise Sum-reduce : $F_i\gets \sum_j^q F_{ij}$
+		\State Column-wise Gather on rank 0 : $F\gets [F_1^T,...,F_q^T]^T$
+		\If{\text{FullProd}}
+			\State Sum-reduce : $G\gets \sum_{i,j}^{q,q} G_{ij}$
+		\EndIf
+		%\Comment{Locally on rank 0}
+		\end{algorithmic}
+	\end{algorithm}
+	$A \Omega,\Omega^T A \Omega$ multiplications were implemented 
+	The matrix $A$ is distributed among processors by using a two-dimensional block distribution while the matrix $\Omega$ is distributed using a block row distribution. The parallelization of the algorithm is implemented in the following way:
 	Describe how you parallelize randomized Nyström and provide pseudo-code of the parallel algorithm. For the parallelization, the matrix $A$ should be distributed among processors by using a two-dimensional block distribution while the matrix $\Omega$ should be distributed using a block row distribution. You can consider that the number of processors is a power of 2 such that you can easily distribute the matrices among processors. For example, when $P=\sqrt{P} \times \sqrt{P}=9$, the matrices $A$ and $\Omega$ are distributed as:
 
-	$$
-	A=\left(\begin{array}{lll}
-	A_{11} & A_{12} & A_{13} \\
-	A_{21} & A_{22} & A_{23} \\
-	A_{31} & A_{32} & A_{33}
-	\end{array}\right), \quad \Omega=\left(\begin{array}{l}
-	\Omega_1 \\
-	\Omega_2 \\
-	\Omega_3
-	\end{array}\right)
-	$$
+
 
 	$$
 	B=\Omega^T A \Omega=\left(\begin{array}{lll}
@@ -85,7 +111,7 @@
 			\State $[A_{N y s t}]_k \gets \hat{U}_k \Sigma^2(1: k, 1: k) \hat{U}_k^T$ \Comment{In parallel}
 		\EndIf
 		\end{algorithmic}
-		\end{algorithm}
+	\end{algorithm}
 	
 	\section{Experimental procedure}
 		- averaging to increase precision of results
