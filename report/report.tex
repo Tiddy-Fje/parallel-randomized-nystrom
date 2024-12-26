@@ -16,22 +16,120 @@
 
 	\section{Introduction}
 		\lipsum[1]
-	\section{Algorithms}
-        \subsection{Sketching Matrices}
-        \subsection{Randomized Nyström low rank approximation}
-		The goal of this project is to study the randomized Nyström algorithm for computing a rank- $k$ approximation of a matrix $A \in \mathbb{R}^{n \times n}$ that is symmetric positive semidefinite. Given a sketching matrix $\Omega \in \mathbb{R}^{n \times l}$, where $l$ is the sketch dimension, $l>k$, the randomized Nyström approximation relies on the following formula:
+	\section{Randomized Nyström low rank approximation}
+		The goal of the Randomized Nystr\"om Algorithm is to represent a given matrix $A \in \mathbb{R}^{n \times n}$ by some approximated matrix with a lower rank $k < n$. The starting point of the algorithm is a rank-$\ell$ approximation of $A$, in the form
+\[
+A_{Nyst} := (A\Omega)(\Omega^T A \Omega)^{\dagger}(\Omega^T A) \in \mathbb{R}^{n \times n},
+\]
+where $(\Omega^T A \Omega)^\dagger$ is the pseudoinverse of $\Omega^T A \Omega$ and $\Omega \in \mathbb{R}^{n \times \ell}$ is a sketching matrix. We assume $k < \ell < n$. To further reduce the rank of $A_{Nyst}$ to $k$, we have two choices: approximate only the core matrix $\Omega^T A \Omega$ or the whole $A_{Nyst}$. In this project, we focus on the second approach. Algorithm \ref{alg:nystrom} shows how this can be achieved.
 
-		$$
-		A_{N y s t}=(A \Omega)\left(\Omega^T A \Omega\right)^{+}\left(\Omega^T A\right)
-		$$
-		
-		where $\left(\Omega^T A \Omega\right)^{+}$denotes the pseudoinverse of $\Omega^T A \Omega$. This formula provides an approximation of $A$ of rank at most $l$. Several solutions are possible for computing a rank-k approximation from $A_{N_{y s t}}$, that we denote as $[A_{N_{y s t}}]_k$. One consists of computing a rank-k decomposition of the matrix $B=\Omega^T A \Omega$, while another one consists of computing a rank-k truncation of the Nyström approximation $A_{N y n t}$. The second approach is considered for this project. Different solutions are proposed in the literature, see one solution in the slides from the lecture on Randomized algorithms for low rank matrix approximation, where the algorithm relies on the Cholesky decomposition or the eigenvalue decomposition of $B$. Other reference is 44]. Two different data sets should be used to validate your considered randomized Nyström low rank approximation, that are described later on. Hence this project should allow you to identify a randomized algorithm that is numerically stable for the considered data sets and scales reasonably well in parallel.
-	\section{Data sets}
-	We consider two different types of data sets in this project. The first is synthetic and is a part of those described in section 5 of [4]. More precisely, we consider polynomial and exponential decay diagonal matrices with different decay rates, which we call slow, medium and fast in the rest of the report.
-	
-	The second data set we use  described for example in [1] (section 4). It consists of a similarity matrix build from the MNIST dataset with help of the radial basis function $e^{-\left\|x_i-x_j\right\|^2 / c^2}$. With the first $n$ rows of the MNIST dataset leads to a dense $n\times n$ matrix $A$. The parameter $c$ can be varied to tune how much to penalise dissimilarity. To make the exploration of this value simpler, we decided to first normalize the MNIST dataset by dividing the entries by the maximal intensity across the dataset. 
-	
-	[ADRESS THIS] The dimension $n$ should be taken depending on what your code can support in terms of memory consumption.
+\begin{algorithm}
+\caption{Randomized Nystr\"om approximation using the Cholesky decomposition}
+\label{alg:nystrom}
+\begin{algorithmic}[1]
+  \State Let $C = A\Omega$ and $B = \Omega^T C$.
+  \State Compute the Cholesky decomposition: $B = LL^T$.
+  \State Solve the linear system using back substitution: $Z = C(L^T)^{-1}$.
+  \State Perform QR decomposition: $Z = QR$.
+  \State Compute the singular value decomposition (SVD) of $R$ and truncate:
+  \[ R = U \Sigma V^T \approx \tilde{U}_k \tilde{\Sigma}_k \tilde{V}_k^T. \]
+  \State Set $\tilde{U}_k = Q\tilde{U}_k$ (or equivalently $\tilde{U}_k = Z\tilde{V}_k\tilde{\Sigma}_k^{-1}$) and return $\tilde{U}_k \tilde{\Sigma}_k^2 \tilde{U}_k^T \approx A_{Nyst}$.
+\end{algorithmic}
+\end{algorithm}
+
+To show why the result of Algorithm \ref{alg:nystrom} is in fact a rank-$k$ approximation of $A_{Nyst}$, we write
+\begin{align*}
+\tilde{U}_k \tilde{\Sigma}_k^2 \tilde{U}_k^T &= Q\tilde{U}_k \tilde{\Sigma}_k \tilde{\Sigma}_k^T \tilde{U}_k^T Q^T \\
+&\approx QRR^T Q^T = ZZ^T = A\Omega(L^T)^{-1}(L^T)^{-1}\Omega^T A^T \\
+&= A\Omega(LL^T)^{-1}\Omega^T A^T = A(\Omega^T A \Omega)^{\dagger}\Omega^T A^T.
+\end{align*}
+
+However, here we have the inverse of $\Omega^T A \Omega$ instead of its pseudoinverse. Unfortunately, Algorithm \ref{alg:nystrom} fails in Step 2 if $\Omega^T A \Omega$ is numerically singular. In this case, as in \cite{reference}, we replace $L$ by a square root of $B$ in SVD form. Specifically, we write $B = U_B \Sigma_B U_B^T$ (since $B$ is SPSD), and set $L = U_B \sqrt{\Sigma_B} U_B^T$. By construction, we have
+\[
+LL^T = U_B \sqrt{\Sigma_B} U_B^T (U_B \sqrt{\Sigma_B} U_B^T)^T = U_B \Sigma_B U_B^T = B.
+\]
+We then replace $(L^T)^{-1}$ with $(L^T)^\dagger$. This can be simply calculated as
+\[
+(L^T)^\dagger = (U_B \sqrt{\Sigma_B} U_B^T)^\dagger,
+\]
+where $\sqrt{\Sigma_B}$ is a diagonal matrix whose entries are given by
+\[
+(\sqrt{\Sigma_B})_{i,i} = \begin{cases} \frac{1}{(\sqrt{\Sigma_B})_{i,i}} & \text{if } (\sqrt{\Sigma_B})_{i,i} \neq 0, \\
+0 & \text{otherwise.} \end{cases}
+\]
+\section{Sketching and Sketching Matrices}
+
+In this section, we provide a detailed overview of sketching and the sketching matrices utilized in this project. The concept of sketching involves transforming a high-dimensional matrix $A \in \mathbb{R}^{n \times n}$ into a lower-dimensional representation $A\Omega$, where $\Omega \in \mathbb{R}^{n \times \ell}$ is a tall and skinny sketching matrix. The goal of sketching is to embed the high-dimensional data into a reduced-dimensional space while preserving the essential geometric properties of the data.
+
+More formally, given any two vectors $x$ and $y$ in the high-dimensional space, their sketched counterparts $\hat{x}$ and $\hat{y}$ should approximately preserve their inner product:
+\begin{equation}\label{eq:1}
+\left| \langle \hat{x}, \hat{y} \rangle - \langle x, y \rangle \right| \leq \varepsilon \|x\|_2 \|y\|_2 \tag{2}
+\end{equation}
+where $\varepsilon > 0$ is a small approximation error. However, achieving this exact preservation for all $x$ and $y$ is generally infeasible due to the reduced dimensionality $\ell$. Instead, $\Omega$ is typically chosen randomly, ensuring that \cref{eq:1} holds with high probability $1 - \delta$, where $\delta < 1$.
+
+In this project, we employ two specific types of sketching matrices:
+\subsection{Gaussian sketching }
+The Gaussian sketching matrix is a widely used random projection method in which the entries of the sketching matrix $\Omega$ are drawn independently from a standard normal distribution. Mathematically, it is defined as:
+\[
+\Omega_{ij} \sim \mathcal{N}(0, 1),
+\]
+where $\Omega \in \mathbb{R}^{n \times \ell}$, and $\ell$ represents the reduced dimensionality of the sketch.
+
+The sketched matrix $A\Omega$, for an input matrix $A \in \mathbb{R}^{n \times d}$, satisfies approximate preservation of the geometry of the original matrix. Specifically, the sketch guarantees that for any vector $x \in \mathbb{R}^d$:
+\[
+(1 - \varepsilon)\|A x\|_2^2 \leq \|A \Omega x\|_2^2 \leq (1 + \varepsilon)\|A x\|_2^2,
+\]
+with high probability, where $\varepsilon > 0$ is a small approximation error. This property ensures that pairwise distances between points in the projected space are approximately preserved.
+
+The Gaussian sketching matrix can also be viewed as a random transformation that approximately satisfies the following subspace embedding property for any subspace $T \subseteq \mathbb{R}^d$:
+\[
+(1 - \varepsilon) \|v\|_2^2 \leq \|\Omega v\|_2^2 \leq (1 + \varepsilon) \|v\|_2^2, \quad \forall v \in T.
+\]
+
+\section{Block Subsampled Randomized Hadamard Transform (BSRHT)}
+
+\subsection{Subsampled Randomized Hadamard Transform (SRHT)}
+The BSRHT is a version of the Subsampled Randomized Hadamard Transform (SRHT) specifically designed for distributed architectures. For $n$ being a power of two, the SRHT can be defined as
+\[
+\Omega^T = \sqrt{\frac{n}{\ell}} RHD,
+\]
+where:
+\begin{itemize}
+  \item $H \in \mathbb{R}^{n \times n}$ is the normalized Walsh--Hadamard matrix, which is defined recursively as:
+  \[
+  H_2 = \begin{pmatrix} 1 & 1 \\
+  1 & -1 \end{pmatrix}, \quad H_n = \begin{pmatrix} H_{n/2} & H_{n/2} \\
+  H_{n/2} & -H_{n/2} \end{pmatrix}, \quad \text{and} \quad H = n^{-1/2} H_n.
+  \]
+  \item $D \in \mathbb{R}^{n \times n}$ is a diagonal matrix with i.i.d. random variables $\sim \text{Uniform}(\pm 1)$.
+  \item $R \in \mathbb{R}^{\ell \times n}$ is a subset of $\ell$ randomly sampled rows from the $n \times n$ identity matrix.
+\end{itemize}
+
+Note that we can always zero-pad the data to ensure that $n$ is a power of two. Now, for $P$ different processors, the BSRHT can be constructed block-wise from the SRHT as:
+\[
+\Omega^T = \begin{pmatrix} \Omega_1^T \\
+\Omega_2^T \\
+\vdots \\
+\Omega_P^T \end{pmatrix} = \sqrt{\frac{n}{P\ell}} \begin{pmatrix} D_{L1} & \cdots & D_{LP} \end{pmatrix}
+\begin{pmatrix}
+RH & \cdots & 0 \\
+\vdots & \ddots & \vdots \\
+0 & \cdots & RH
+\end{pmatrix}
+\begin{pmatrix} D_{R1} & \cdots & 0 \\
+\vdots & \ddots & \vdots \\
+0 & \cdots & D_{RP} \end{pmatrix}, \tag{2}
+\]
+with:
+\begin{itemize}
+  \item $H \in \mathbb{R}^{n/P \times \ell/P}$ being the normalized Walsh--Hadamard matrix.
+  \item $D_{Li} \in \mathbb{R}^{n/P \times n/P}$, $D_{Ri} \in \mathbb{R}^{n/P \times n/P}$ being diagonal matrices with i.i.d. Rademacher entries $\pm 1$.
+  \item $R \in \mathbb{R}^{\ell \times n/P}$ being a uniform sampling matrix, sampling along the rows.
+\end{itemize}
+
+This structure is particularly suited for distributed computations, as it allows for parallelism while maintaining the theoretical properties of the SRHT.
+
+
 	\section{Stability analysis}
 		- bullet points about comments to include 
 	\section{Parallelisation}
@@ -154,4 +252,3 @@
 	%	\section{Runtime Estimation}\label{appendix:runtime_estimation}
 %%%
 \end{document} 
-
