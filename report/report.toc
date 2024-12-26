@@ -1,12 +1,13 @@
 \contentsline {section}{\numberline {1}Introduction}{1}{section.1}%
-\contentsline {section}{\numberline {2}Algorithms}{1}{section.2}%
-\contentsline {subsection}{\numberline {2.1}Sketching Matrices}{1}{subsection.2.1}%
-\contentsline {subsection}{\numberline {2.2}Randomized Nyström low rank approximation}{1}{subsection.2.2}%
-\contentsline {section}{\numberline {3}Data sets}{2}{section.3}%
-\contentsline {section}{\numberline {4}Stability analysis}{2}{section.4}%
-\contentsline {section}{\numberline {5}Parallelisation}{2}{section.5}%
-\contentsline {section}{\numberline {6}Experimental procedure}{4}{section.6}%
-\contentsline {section}{\numberline {7}Algorithm Performance}{4}{section.7}%
-\contentsline {subsection}{\numberline {7.1}Sequential Performance}{4}{subsection.7.1}%
-\contentsline {subsection}{\numberline {7.2}Parallel Performance}{5}{subsection.7.2}%
-\contentsline {section}{\numberline {8}Conclusion}{6}{section.8}%
+\contentsline {section}{\numberline {2}Randomized Nyström low rank approximation}{1}{section.2}%
+\contentsline {section}{\numberline {3}Sketching and Sketching Matrices}{2}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Gaussian sketching }{3}{subsection.3.1}%
+\contentsline {section}{\numberline {4}Block Subsampled Randomized Hadamard Transform (BSRHT)}{3}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Subsampled Randomized Hadamard Transform (SRHT)}{3}{subsection.4.1}%
+\contentsline {section}{\numberline {5}Stability analysis}{4}{section.5}%
+\contentsline {section}{\numberline {6}Parallelisation}{4}{section.6}%
+\contentsline {section}{\numberline {7}Experimental procedure}{5}{section.7}%
+\contentsline {section}{\numberline {8}Algorithm Performance}{6}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Sequential Performance}{6}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Parallel Performance}{7}{subsection.8.2}%
+\contentsline {section}{\numberline {9}Conclusion}{8}{section.9}%
