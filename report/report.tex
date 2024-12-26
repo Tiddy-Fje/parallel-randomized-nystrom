@@ -135,23 +135,11 @@ This structure is particularly suited for distributed computations, as it allows
 	\section{Parallelisation}
 	We parallelise the algorithm by distributing among the processors the computation of $A \Omega,\Omega^T A \Omega$, and all other matrix operations with complexities at least proportional to $n$. 
 	
-	The parallelisation of QR factorisation was the topic of the first project. We therefore included the relevant functions for it in the code folder. The parallelisation of matrix products was however implemented from scratch. It was done as 	
+	The parallelisation of QR factorisation was the topic of the first project. We therefore included the relevant functions for it in the code folder. 
 	
-	$$
-	S=\left(\begin{array}{lll}
-	S_{0} & S_{01} & S_{02} \\
-	S_{10} & S_{11} & S_{12} \\
-	S_{20} & S_{21} & S_{22}
-	\end{array}\right), \quad \Omega=\left(\begin{array}{l}
-	T_0 \\
-	T_1 \\
-	T_2
-	\end{array}\right),
-	$$
-	with processor $i$ having the $i$-th row of $S$ and the $i$-th block row of $T$. Then
-
-	\begin{algorithm}
-		\caption{Computes the matrix product of two matrices $D$ and $E$ in parallel.}
+	The parallelisation of matrix products was however implemented from scratch. It was done as described in algorithm \ref{alg:parallel-matrix-product}, by distributing matrices smartly among the processors. 
+	\begin{algorithm}[H]
+		\caption{Computes the matrix product of two matrices $D$ and $E$ in parallel.}\label{alg:parallel-matrix-product}
 		\begin{algorithmic}
 		\Require $q$ is an integer and the square root of the number of processors, $D$ is an $m\times m$ matrix distributed such that processor $i$ has $D_{i//q,i\text{ mod }q}$ and $E$ is a $m\times n$ matrix distributed such that processor $i$ has $E_{i//q}$. FullProd is true if we also want to compute $E^TDE$.
 		\Ensure $F=DE$ (and $G=E^TF$ too if FullProd is true). 
@@ -164,30 +152,12 @@ This structure is particularly suited for distributed computations, as it allows
 		\If{\text{FullProd}}
 			\State Sum-reduce : $G\gets \sum_{i,j}^{q,q} G_{ij}$
 		\EndIf
-		%\Comment{Locally on rank 0}
 		\end{algorithmic}
 	\end{algorithm}
-	$A \Omega,\Omega^T A \Omega$ multiplications were implemented 
-	The matrix $A$ is distributed among processors by using a two-dimensional block distribution while the matrix $\Omega$ is distributed using a block row distribution. The parallelization of the algorithm is implemented in the following way:
-	Describe how you parallelize randomized Nyström and provide pseudo-code of the parallel algorithm. For the parallelization, the matrix $A$ should be distributed among processors by using a two-dimensional block distribution while the matrix $\Omega$ should be distributed using a block row distribution. You can consider that the number of processors is a power of 2 such that you can easily distribute the matrices among processors. For example, when $P=\sqrt{P} \times \sqrt{P}=9$, the matrices $A$ and $\Omega$ are distributed as:
-
-
-
-	$$
-	B=\Omega^T A \Omega=\left(\begin{array}{lll}
-		\Omega_1^T & \Omega_2^T & \Omega_3^T
-		\end{array}\right)\left(\begin{array}{lll}
-		A_{11} & A_{12} & A_{13} \\
-		A_{21} & A_{22} & A_{23} \\
-		A_{31} & A_{32} & A_{33}
-		\end{array}\right)\left(\begin{array}{l}
-		\Omega_1 \\
-		\Omega_2 \\
-		\Omega_3
-		\end{array}\right)
-	$$
-
-	\begin{algorithm}
+	This version of the matrix product allows for a fluid computation of both the $A \Omega,\Omega^T A \Omega$ products involved in the sketching and general matrix products between two matrices $D$ and $E$ which appear in the computation of the rank-$k$ approximation. 
+	
+	The pseudo-code for the parallelisation of the randomized Nystr\"om algorithm is then described in algorithm \ref{alg:parallel-rand-nystrom}.
+	\begin{algorithm}[htb]
 		\caption{Randomized Nystr\"om algorithm. The syntax was adapted from this Overleaf example.}\label{alg:parallel-rand-nystrom}
 		\begin{algorithmic}
 		\Require $A$ is an $n\times n$ symmetric positive semidefinite matrix, $\Omega$ is a sketching matrix of size $n\times l$, and $k$ is the rank of the approximation
@@ -210,7 +180,34 @@ This structure is particularly suited for distributed computations, as it allows
 		\EndIf
 		\end{algorithmic}
 	\end{algorithm}
-	
+	%$$
+	%S=\left(\begin{array}{lll}
+	%S_{0} & S_{01} & S_{02} \\
+	%S_{10} & S_{11} & S_{12} \\
+	%S_{20} & S_{21} & S_{22}
+	%\end{array}\right), \quad \Omega=\left(\begin{array}{l}
+	%T_0 \\
+	%T_1 \\
+	%T_2
+	%\end{array}\right),
+	%$$
+	%$$
+	%B=\Omega^T A \Omega=\left(\begin{array}{lll}
+	%	\Omega_1^T & \Omega_2^T & \Omega_3^T
+	%	\end{array}\right)\left(\begin{array}{lll}
+	%	A_{11} & A_{12} & A_{13} \\
+	%	A_{21} & A_{22} & A_{23} \\
+	%	A_{31} & A_{32} & A_{33}
+	%	\end{array}\right)\left(\begin{array}{l}
+	%	\Omega_1 \\
+	%	\Omega_2 \\
+	%	\Omega_3
+	%	\end{array}\right)
+	%$$
+	%with processor $i$ having the $i$-th row of $S$ and the $i$-th block row of $T$. Then
+	%$A \Omega,\Omega^T A \Omega$ multiplications were implemented 
+	%The matrix $A$ is distributed among processors by using a two-dimensional block distribution while the matrix $\Omega$ is distributed using a block row distribution. The parallelization of the algorithm is implemented in the following way:
+	%Describe how you parallelize randomized Nyström and provide pseudo-code of the parallel algorithm. For the parallelization, the matrix $A$ should be distributed among processors by using a two-dimensional block distribution while the matrix $\Omega$ should be distributed using a block row distribution. You can consider that the number of processors is a power of 2 such that you can easily distribute the matrices among processors. For example, when $P=\sqrt{P} \times \sqrt{P}=9$, the matrices $A$ and $\Omega$ are distributed as:
 	\section{Experimental procedure}
 		- averaging to increase precision of results
 		- when running in parallel, was simited by number of cores $p=2^{2s}$ with $s\in\mathbb{N}$ (due to perfect square constraint of the paralelised matrix multiplication and the SHRT algorithm using the Hadamard transform), so we ran results for 1,4,16,64
