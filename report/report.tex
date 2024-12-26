@@ -17,11 +17,11 @@
 	\section{Introduction}
 		\lipsum[1]
 	\section{Randomized Nyström low rank approximation}
-		The goal of the Randomized Nystr\"om Algorithm is to represent a given matrix $A \in \mathbb{R}^{n \times n}$ by some approximated matrix with a lower rank $k < n$. The starting point of the algorithm is a rank-$\ell$ approximation of $A$, in the form
-\[
-A_{Nyst} := (A\Omega)(\Omega^T A \Omega)^{\dagger}(\Omega^T A) \in \mathbb{R}^{n \times n},
-\]
-where $(\Omega^T A \Omega)^\dagger$ is the pseudoinverse of $\Omega^T A \Omega$ and $\Omega \in \mathbb{R}^{n \times \ell}$ is a sketching matrix. We assume $k < \ell < n$. To further reduce the rank of $A_{Nyst}$ to $k$, we have two choices: approximate only the core matrix $\Omega^T A \Omega$ or the whole $A_{Nyst}$. In this project, we focus on the second approach. Algorithm \ref{alg:nystrom} shows how this can be achieved.
+	The goal of the Randomized Nystr\"om Algorithm is to represent a given matrix $A \in \mathbb{R}^{n \times n}$ by some lower rank $k<n$ approximation. The starting point of the algorithm is a rank-$\ell$ approximation of $A$, in the form
+	\[
+	A_{Nyst} := (A\Omega)(\Omega^T A \Omega)^{\dagger}(\Omega^T A) \in \mathbb{R}^{n \times n},
+	\]
+	where $(\Omega^T A \Omega)^\dagger$ is the pseudoinverse of $\Omega^T A \Omega$ and $\Omega \in \mathbb{R}^{n \times \ell}$ is a sketching matrix. We assume $k < \ell < n$. To further reduce the rank of $A_{Nyst}$ to $k$, we have two choices: approximate only the core matrix $\Omega^T A \Omega$ or the whole $A_{Nyst}$. In this project, we focus on the second approach. Algorithm \ref{alg:nystrom} shows how this can be achieved.
 
 \begin{algorithm}
 \caption{Randomized Nystr\"om approximation using the Cholesky decomposition}
@@ -65,45 +65,36 @@ More formally, given any two vectors $x$ and $y$ in the high-dimensional space, 
 \begin{equation}\label{eq:1}
 \left| \langle \hat{x}, \hat{y} \rangle - \langle x, y \rangle \right| \leq \varepsilon \|x\|_2 \|y\|_2 \tag{2}
 \end{equation}
-where $\varepsilon > 0$ is a small approximation error. However, achieving this exact preservation for all $x$ and $y$ is generally infeasible due to the reduced dimensionality $\ell$. Instead, $\Omega$ is typically chosen randomly, ensuring that \cref{eq:1} holds with high probability $1 - \delta$, where $\delta < 1$.
+where $\varepsilon > 0$ is a small approximation error. However, achieving this exact preservation for all $x$ and $y$ is generally infeasible due to the reduced dimensionality $\ell$. Instead, $\Omega$ is typically regarded as a random matrix, ensuring that \cref{eq:1} holds with high probability $1 - \delta$, where $\delta < 1$.
 
 In this project, we employ two specific types of sketching matrices:
 \subsection{Gaussian sketching }
-The Gaussian sketching matrix is a widely used random projection method in which the entries of the sketching matrix $\Omega$ are drawn independently from a standard normal distribution. Mathematically, it is defined as:
+The Gaussian sketching matrix is random projection method in which the entries of the sketching matrix $\Omega$ are drawn independently from a standard normal distribution. Mathematically, it is defined as:
 \[
-\Omega_{ij} \sim \mathcal{N}(0, 1),
+\Omega_{ij} \sim \mathcal{N}(0, 1).
 \]
-where $\Omega \in \mathbb{R}^{n \times \ell}$, and $\ell$ represents the reduced dimensionality of the sketch.
+%where $\Omega \in \mathbb{R}^{n \times \ell}$, and $\ell$ represents the reduced dimensionality of the sketch.
+% this is not necessary, as we already defined Omega above
 
-The sketched matrix $A\Omega$, for an input matrix $A \in \mathbb{R}^{n \times d}$, satisfies approximate preservation of the geometry of the original matrix. Specifically, the sketch guarantees that for any vector $x \in \mathbb{R}^d$:
+This method is such that for an input matrix $A \in \mathbb{R}^{n \times d}$ and for any vector $x \in \mathbb{R}^l$:
 \[
 (1 - \varepsilon)\|A x\|_2^2 \leq \|A \Omega x\|_2^2 \leq (1 + \varepsilon)\|A x\|_2^2,
 \]
 with high probability, where $\varepsilon > 0$ is a small approximation error. This property ensures that pairwise distances between points in the projected space are approximately preserved.
 
-The Gaussian sketching matrix can also be viewed as a random transformation that approximately satisfies the following subspace embedding property for any subspace $T \subseteq \mathbb{R}^d$:
+The Gaussian sketching matrix can also be viewed as a random transformation that approximately satisfies the following subspace embedding property for any subspace $T \subseteq \mathbb{R}^l$:
 \[
 (1 - \varepsilon) \|v\|_2^2 \leq \|\Omega v\|_2^2 \leq (1 + \varepsilon) \|v\|_2^2, \quad \forall v \in T.
 \]
 
 \subsection{Subsampled Randomized Hadamard Transform (SRHT)}
-The BSRHT is a version of the Subsampled Randomized Hadamard Transform (SRHT) specifically designed for distributed architectures. For $n$ being a power of two, the SRHT can be defined as
+BSRHT is a version of the Subsampled Randomized Hadamard Transform (SRHT) specifically designed for distributed architectures. For $n$ being a power of two, the SRHT can be defined as
 \[
 \Omega^T = \sqrt{\frac{n}{\ell}} RHD,
 \]
-where:
-\begin{itemize}
-  \item $H \in \mathbb{R}^{n \times n}$ is the normalized Walsh--Hadamard matrix, which is defined recursively as:
-  \[
-  H_2 = \begin{pmatrix} 1 & 1 \\
-  1 & -1 \end{pmatrix}, \quad H_n = \begin{pmatrix} H_{n/2} & H_{n/2} \\
-  H_{n/2} & -H_{n/2} \end{pmatrix}, \quad \text{and} \quad H = n^{-1/2} H_n.
-  \]
-  \item $D \in \mathbb{R}^{n \times n}$ is a diagonal matrix with i.i.d. random variables $\sim \text{Uniform}(\pm 1)$.
-  \item $R \in \mathbb{R}^{\ell \times n}$ is a subset of $\ell$ randomly sampled rows from the $n \times n$ identity matrix.
-\end{itemize}
+where: $H \in \mathbb{R}^{n \times n}$ is the normalized Walsh-Hadamard matrix; $D \in \mathbb{R}^{n \times n}$ is a diagonal matrix with i.i.d. random variables $\sim \text{Uniform}(\pm 1)$; and $R \in \mathbb{R}^{\ell \times n}$ is a subset of $\ell$ randomly sampled rows from the $n \times n$ identity matrix.
 
-Note that we can always zero-pad the data to ensure that $n$ is a power of two. Now, for $P$ different processors, the BSRHT can be constructed block-wise from the SRHT as:
+Note that we can always zero-pad the data to ensure that $n$ is a power of two. Now, for $P$ different processors, BSRHT can be constructed block-wise from the SRHT as:
 \[
 \Omega^T = \begin{pmatrix} \Omega_1^T \\
 \Omega_2^T \\
@@ -118,12 +109,7 @@ RH & \cdots & 0 \\
 \vdots & \ddots & \vdots \\
 0 & \cdots & D_{RP} \end{pmatrix}, \tag{2}
 \]
-with:
-\begin{itemize}
-  \item $H \in \mathbb{R}^{n/P \times \ell/P}$ being the normalized Walsh--Hadamard matrix.
-  \item $D_{Li} \in \mathbb{R}^{n/P \times n/P}$, $D_{Ri} \in \mathbb{R}^{n/P \times n/P}$ being diagonal matrices with i.i.d. Rademacher entries $\pm 1$.
-  \item $R \in \mathbb{R}^{\ell \times n/P}$ being a uniform sampling matrix, sampling along the rows.
-\end{itemize}
+with: $H \in \mathbb{R}^{n/P \times \ell/P}$ being the normalized Walsh-Hadamard matrix; $D_{Li} \in \mathbb{R}^{n/P \times n/P}$, $D_{Ri} \in \mathbb{R}^{n/P \times n/P}$ being diagonal matrices with i.i.d. Rademacher entries $\pm 1$; and $R \in \mathbb{R}^{\ell \times n/P}$ being a uniform sampling matrix, sampling along the rows.
 
 This structure is particularly suited for distributed computations, as it allows for parallelism while maintaining the theoretical properties of the SRHT.
 
