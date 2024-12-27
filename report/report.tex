@@ -15,7 +15,13 @@
 	\setcounter{page}{1}
 
 	\section{Introduction}
-		\lipsum[1]
+	In this project, we study the randomized Nyström approximation algorithm for the low-rank approximation of a positive-semidefinite matrix $A \in \mathbb{R}^{n \times n}$. There are several important applications for this theory, such as image processing, PCA, or solving integral equations. However, the most common practical setting are kernel methods for large-scale machine-learning problems. Since these algorithms scale at least quadratic in the number of data points, low-rank approximations are essential to obtain reasonable storage usage and computational costs.
+	
+	The randomized Nyström approximation is based on a random sketching matrix $\Omega \in \mathbb{R}^{n \times l}$ and the formula:
+	\begin{equation*}
+	A_{N y s t}=(A \Omega)\left(\Omega^T A \Omega\right)^{\dagger}\left(\Omega^T A\right)
+	\end{equation*}
+	where $l \ll n$ is the sketching dimension and $\left(\Omega^T A \Omega\right)^{\dagger}$ denotes the pseudo-inverse. In particular, the algorithm we used computes a fixed-rank $k \leq l$ approximation by truncating the sketched matrix $A_{N y s t}$. Our goal is to efficiently parallelize this alogrithm. Key aspects of our investigations are numerical stability, scalability, performance (in terms of runtime), and the approximation of the leading $k$ singular values of $A$.
 	\section{Randomized Nyström low rank approximation}
 	The goal of the Randomized Nystr\"om Algorithm is to represent a given matrix $A \in \mathbb{R}^{n \times n}$ by some lower rank $k<n$ approximation. The starting point of the algorithm is a rank-$\ell$ approximation of $A$, in the form
 	\[
@@ -113,9 +119,6 @@ with: $H \in \mathbb{R}^{n/P \times \ell/P}$ being the normalized Walsh-Hadamard
 
 This structure is particularly suited for distributed computations, as it allows for parallelism while maintaining the theoretical properties of the SRHT.
 
-
-	\section{Stability analysis}
-		- bullet points about comments to include 
 	\section{Parallelisation}
 	We parallelise the algorithm by distributing among the processors the computation of $A \Omega,\Omega^T A \Omega$, and all other matrix operations with complexities at least proportional to $n$. 
 	
@@ -196,9 +199,20 @@ This structure is particularly suited for distributed computations, as it allows
 		The presented results were obtained by running our scripts on the Helvetios cluster, by averaging over different runs to make results more robust and interpretable.
 		
 		In general, due to the BSRHT making use of the Hadamard transformation, $n$ was made vary as powers of $2$ only. In reality one can always zero-pad the data to ensure that the Hadamard transformation can be applied. This was however avoided for performance analysis since it would have introduced unnecessary variation in the measurements.  
-		\subsection{Stability analysis}
-		....
+		\subsection{DataSets}
+		In this project, we consider two types of datasets to evaluate the performance of our methods: synthetic datasets and those derived from the MNIST dataset. For the synthetic datasets, we construct diagonal matrices with positive eigenvalues and different rates of decay for the singular values. We explore both \textit{polynomial decay} and \textit{exponential decay}, with rates categorized as \textit{slow}, \textit{medium}, and \textit{fast}. The diagonal structure allows us to easily select the singular values and define an effective rank \( R \) for the matrices. This design provides controlled conditions for studying spectral properties and their influence on algorithmic performance.
 
+For the datasets derived from MNIST, we normalize the data to have values in the range \([0, 1]\) and use a subset of \( n \) data points. A similarity matrix is then constructed using the radial basis function (RBF), defined as:
+
+\[
+A_{ij} = e^{-\|x_i - x_j\|^2 / c^2}
+\]
+
+where \( x_i \) and \( x_j \) are data samples, and \( c \) is a tunable parameter controlling the penalty for dissimilarity. This results in a symmetric, dense \( n \times n \) matrix, where \( c \) determines how rapidly similarity decreases with distance. To ensure consistent computations, we normalize the MNIST dataset by dividing each pixel value by the maximum intensity across the dataset.
+
+We visualize the singular value decay of these datasets in Figure~\ref{fig:singular_values}, which highlights the differences between the decay patterns for the synthetic matrices and the RBF-based similarity matrices derived from MNIST.
+
+	Overall, increasing  consistently reduces relative errors across all datasets, as evident in Figures~\ref{fig:expdecay}-\ref{fig:polydecay}. This behavior is consistent with theoretical expectations that higher ranks retain more of the matrix’s variance. The improvement is most pronounced for Block SRHT on datasets with steep singular value decay, such as ExpDecay and PolyDecay. Larger sketching dimensions  enhance approximation quality for Gaussian Sketch, though the marginal gains diminish for . In contrast, Block SRHT’s performance remains stable across varying , emphasizing its adaptability and reduced sensitivity to the choice of sketching dimension.
 		\subsection{Performance analysis}
 		For these results to have some general relevance, we tried considering realistic values of $k$ and $l$. More specifically, $k$ was taken often around $n/20$, while $l$ was taken logaritmically spaced.
 	

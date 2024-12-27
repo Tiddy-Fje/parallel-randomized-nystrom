@@ -63,9 +63,9 @@ if __name__ == "__main__":
 
 
     n = 2 ** 10
-    r = 3 * n // 4
+    r = 2 * n // 4
     log2_l_min, log2_l_max = 6, 9
-    ls = 2 ** np.arange(log2_l_min, log2_l_max + 1).astype(int)
+    ls = [100,200,300,400,500]
     ks = np.linspace(25, max(ls), 10).astype(int)
     output_dir = "../figures"
 
@@ -73,6 +73,7 @@ if __name__ == "__main__":
     datasets = [
         ("ExpDecay", synthetic_matrix(n, r, "fast", "exponential")),
         ("PolyDecay", synthetic_matrix(n, r, "fast", "polynomial")),
+        ("MNIST", MNIST_matrix(n)),
         
     ]
 
