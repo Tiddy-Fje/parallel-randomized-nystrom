@@ -94,7 +94,7 @@ BSRHT is a version of the Subsampled Randomized Hadamard Transform (SRHT) specif
 \]
 where: $H \in \mathbb{R}^{n \times n}$ is the normalized Walsh-Hadamard matrix; $D \in \mathbb{R}^{n \times n}$ is a diagonal matrix with i.i.d. random variables $\sim \text{Uniform}(\pm 1)$; and $R \in \mathbb{R}^{\ell \times n}$ is a subset of $\ell$ randomly sampled rows from the $n \times n$ identity matrix.
 
-Note that we can always zero-pad the data to ensure that $n$ is a power of two. Now, for $P$ different processors, BSRHT can be constructed block-wise from the SRHT as:
+Now, for $P$ different processors, BSRHT can be constructed block-wise from the SRHT as:
 \[
 \Omega^T = \begin{pmatrix} \Omega_1^T \\
 \Omega_2^T \\
@@ -193,14 +193,25 @@ This structure is particularly suited for distributed computations, as it allows
 	%The matrix $A$ is distributed among processors by using a two-dimensional block distribution while the matrix $\Omega$ is distributed using a block row distribution. The parallelization of the algorithm is implemented in the following way:
 	%Describe how you parallelize randomized Nyström and provide pseudo-code of the parallel algorithm. For the parallelization, the matrix $A$ should be distributed among processors by using a two-dimensional block distribution while the matrix $\Omega$ should be distributed using a block row distribution. You can consider that the number of processors is a power of 2 such that you can easily distribute the matrices among processors. For example, when $P=\sqrt{P} \times \sqrt{P}=9$, the matrices $A$ and $\Omega$ are distributed as:
 	\section{Experimental procedure}
-		- averaging to increase precision of results
-		- when running in parallel, was simited by number of cores $p=2^{2s}$ with $s\in\mathbb{N}$ (due to perfect square constraint of the paralelised matrix multiplication and the SHRT algorithm using the Hadamard transform), so we ran results for 1,4,16,64
-		- ran results on the Helvetios cluster 
-		- $k$ was taken often around $n/20$ as we deemed this value relevant for real applications
-		- n was made vary as powers of $2$ due to the Hadamard transformation while $l$ was taken logaritmically spaced just to make the visuals more easy to interpret  
+		The presented results were obtained by running our scripts on the Helvetios cluster, by averaging over different runs to make results more robust and interpretable.
+		
+		In general, due to the BSRHT making use of the Hadamard transformation, $n$ was made vary as powers of $2$ only. In reality one can always zero-pad the data to ensure that the Hadamard transformation can be applied. This was however avoided for performance analysis since it would have introduced unnecessary variation in the measurements.  
+		\subsection{Stability analysis}
+		....
+
+		\subsection{Performance analysis}
+		For these results to have some general relevance, we tried considering realistic values of $k$ and $l$. More specifically, $k$ was taken often around $n/20$, while $l$ was taken logaritmically spaced.
+	
+		When running in parallel, the number of processors was limited to values $P=2^{2s}$ with $s\in\mathbb{N}$. This was due to perfect square constraint of the parallelised matrix multiplication and the BSHRT's use of the Hadamard transform. The values of $P$ we choose were 1,4,16,64. 		
+		This also meant having to take $l\le n/64$ integer for the TSQR algorithm to at least have one block-row per processor at the start of its run. We also recall that to see speed-up with parallelisation we need the matrix to be tall-skinny. To have a good speed-up for a bigger $l$, while keeping numerical stability for ill-conditioned matrices another algo should be used.
 	\section{Algorithm Performance}
         \subsection{Sequential Performance}
-		- in general (both plots) observe that k rank approximation represents minority of runtime (as expected as of order $k^3 +nk^2$). Indeed for shown examples represents at most 10\%. This would be different if one were to take big values of $k$. Also does not really seem to depend on sketching method which makes sense given the computations are the same regardless of which sketching method was used to obtain the B and C matrices
+		To explore the sequential runtimes of the implemented algorithms, we decided to do two longitudinal studies : first varying $l$ for a selected value of $n$, and then varying $n$ for a selected $l$. The associated results are represented in \ref{fig:runtimes-l-n-variation}. 
+
+		The main feature common to both plots is that the $k$ rank approximation part of the computation represents in most cases as small minority of runtime (as expected, since it should be of order $l^3 +nk^2$). This would of course change if one were to take big values of $k$ (i.e. if the data was really information-dense).  	
+		It's runtimes also do not really seem to depend on the sketching method. This makes sense given the computations are the same regardless of which sketching method was used to obtain the B and C matrices. One could probably change this if one were to fully take advantage of the structure of the matrices involved in the BSRHT method (as one could use integer-float operations instead of float-float ones). 
+
+		Looking more closely at both figures, it is clear that different behaviours are observed as a function of $l$ and $n$. We discuss each in the following paragraphs.
 		\begin{figure}[htb]       
 			\centering             
 				\vspace{0em}
@@ -208,26 +219,32 @@ This structure is particularly suited for distributed computations, as it allows
 				\caption{Runtimes associated to the tested sketching methods : as a function of $l$ (left) and as a function of $n$ (right). Runtimes are broken down in that associated to the computation of $A\Omega,\Omega^T A\Omega$ and that associated to the computation of the $k$ rank approximation.}
 				\label{fig:runtimes-l-n-variation}
 		\end{figure}
+		\paragraph{$l$ variation}
+		As a function of $l$ we observe extremely different behaviours from Gaussian and BSRHT sketchings. Indeed : the curve for BSRHT looks basically flat, while the Gaussian one increases steadily. This is expected given the complexities of the algorithms respectively are of order $n^2\log_2{n}$ and $nl^2 + ln^2$. This gives a great advantage in using BSRHT if we are embedding information-dense spaces as it scales much better.		
 
-		- different behaviours as a function of l and n : as a function of l SRHT looks almost flat, having really slow increase, while gaussian increases steadily given its complexity is or order $nl^2 + ln^2$. This gives advantage for SRHT if we are embedding "dense spaces" as it scales much better than gaussian as function of l. For n : both algos show significant increase, but SRHT shows faster runtime growth. This makes sense due to extra $\log_2(n)$ term in its complexity. This would give advantage to gaussian sketching if we are dealing with sparse information within really high dimensional spaces.
-		- 
+		Coming back to the $k$-rank approximation runtimes, we notice that the expected considerable increase as a function of $l$ is observed, even if as mentioned it stays relatively small when compared to the sketching runtime.
+		\paragraph{$n$ variation}
+		As a function of $n$ both algorithms show significant increase. BSRHT shows faster runtime growth. For $n=1024$ it seems to take twice the time, while for $n=2048$ it seems to take three times as much. This is a perfect match due to extra $\log_2(n)$ term in its complexity. This gives a considerable advantage in using Gaussian sketching when handling information-sparse within high dimensional spaces.
+
+		As for the $k$-rank approximation runtimes, the linear increase as a function of $n$ is hard to see on the plot due to the different scale. 
         \subsection{Parallel Performance}
-		- selected $l=n/64$ given we are using TSQR for the QR factorisation and we need the matrix to be tall-skinny to actually observe a speed-up. To have a good speed-up for a bigger $l$, while keeping numerical stability for ill-conditionned matrices another algo should be used.
-
-		- for small example : some speed-up is observed as a function of number of cores but communication costs are non neglectable and even dominate the total runtime for p=64. This is expected as the computation is rather small to be run in parallel. The runtimes for the k-rank are the most affected as these represented the smallest part of the computation to start with. for the specific values selected the gaussian sketching is faster (indeed $l$ is taken only as a small fraction of $n$).
-
-		\begin{figure}[htb]       
-			\centering             
-				\vspace{0em}
-				\includegraphics[width=.975\textwidth]{runtimes_cores_variation}
-				\caption{Runtimes associated to the tested sketching methods as a function of the number of cores : for a ``small'' example (left) and a ``large'' one (right). Runtimes are broken down in that associated to the computation of $A\Omega,\Omega^T A\Omega$ and that associated to the computation of the $k$ rank approximation.}
-				\label{fig:runtimes-cores-variation}
-		\end{figure}
-		- for the large : communication is not much of an issue, and big speed ups (quasi linear) are observed for the sketching computation. This means the parallelization is successful and scales well for big computations. We can see the speedup is not as good for k-rank partly because the computation was smaller to start with. The fact that the matrix is not that tall-skinny is also expected to have contributed to the low speed-up of that part.
-		- 
-
+			We now turn to the analysis of the parallel performance. The relevant plot for this section is \ref{fig:runtimes-cores-variation}. For the sake of structure, we analyse separately the small and the large runs.
+			\begin{figure}[htb]       
+				\centering             
+					\vspace{0em}
+					\includegraphics[width=.975\textwidth]{runtimes_cores_variation}
+					\caption{Runtimes associated to the tested sketching methods as a function of the number of cores : for a ``small'' example (left) and a ``large'' one (right). Runtimes are broken down in that associated to the computation of $A\Omega,\Omega^T A\Omega$ and that associated to the computation of the $k$ rank approximation.}
+					\label{fig:runtimes-cores-variation}
+			\end{figure}
+			\paragraph{Small run}
+			For the small run we first observe that some speed-up is displayed as a function of number of cores for both sketching methods. The speed-up is quasi-linear for BRSHT, while it saturates and back-fires for Gaussian sketching, due to the communication overhead. Given that the $k$-rank approximation part of the computation is smaller, it is most affected by the cost of communication, which actually dominates all throughout the core-number sweep.   
+			These behaviours are expected given that : (a) the computation is rather small to be run in parallel; (b) BRSHT is slower than Gaussian sketching for small values of $l$. 
+			
+			For the specific parameter values selected, Gaussian sketching is a factor $\approx 10$ faster than BRSHT (except $P=64$).
+			\paragraph{Large run}
+			For the large run the results are quite different. Communication is not an issue for the sketching part, meaning that quasi-linear speed-ups are observed for both methods. This means the parallelization is successful and scales well for big computations. We also observe initial speed-up for the $k$-rank approximation, though it is short-lived due to the computation still being quite small and due to that the matrix is not that tall-skinny (reducing the benefit in the QR decomposition). 
 	\section{Conclusion}
-	\section*{Aknowledegments}
+	\section*{Aknowledgements}
 	\section*{References}
 	%\appendix
 	%	\section{Runtime Estimation}\label{appendix:runtime_estimation}
