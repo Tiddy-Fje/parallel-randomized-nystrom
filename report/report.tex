@@ -199,7 +199,7 @@ This structure is particularly suited for distributed computations, as it allows
 		The presented results were obtained by running our scripts on the Helvetios cluster, by averaging over different runs to make results more robust and interpretable.
 		
 		In general, due to the BSRHT making use of the Hadamard transformation, $n$ was made vary as powers of $2$ only. In reality one can always zero-pad the data to ensure that the Hadamard transformation can be applied. This was however avoided for performance analysis since it would have introduced unnecessary variation in the measurements.  
-		\subsection{DataSets}
+		\subsection{Datasets}
 		In this project, we consider two types of datasets to evaluate the performance of our methods: synthetic datasets and those derived from the MNIST dataset. For the synthetic datasets, we construct diagonal matrices with positive eigenvalues and different rates of decay for the singular values. We explore both \textit{polynomial decay} and \textit{exponential decay}, with rates categorized as \textit{slow}, \textit{medium}, and \textit{fast}. The diagonal structure allows us to easily select the singular values and define an effective rank \( R \) for the matrices. This design provides controlled conditions for studying spectral properties and their influence on algorithmic performance.
 
 For the datasets derived from MNIST, we normalize the data to have values in the range \([0, 1]\) and use a subset of \( n \) data points. A similarity matrix is then constructed using the radial basis function (RBF), defined as:
@@ -210,15 +210,61 @@ A_{ij} = e^{-\|x_i - x_j\|^2 / c^2}
 
 where \( x_i \) and \( x_j \) are data samples, and \( c \) is a tunable parameter controlling the penalty for dissimilarity. This results in a symmetric, dense \( n \times n \) matrix, where \( c \) determines how rapidly similarity decreases with distance. To ensure consistent computations, we normalize the MNIST dataset by dividing each pixel value by the maximum intensity across the dataset.
 
-We visualize the singular value decay of these datasets in Figure~\ref{fig:singular_values}, which highlights the differences between the decay patterns for the synthetic matrices and the RBF-based similarity matrices derived from MNIST.
+We visualize the singular value decay of these datasets in \cref{fig:singular_values}, which highlights the differences between the decay patterns for the synthetic matrices and the RBF-based similarity matrices derived from MNIST.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.45\textwidth]{synthetic_spectra.png}
+    \hspace{0.02\textwidth} % Add horizontal space
+    \includegraphics[width=0.45\textwidth]{mnist_singular_values_darkblue.png}
+    \caption{Singular value decay of synthetic matrices (left) and the MNIST-based similarity matrix (right).}
+    \label{fig:singular_value_comparison}
+\end{figure}
+		\subsection{Stability analysis}
+		
+		In this section, we investigate how our algorithm performs from a numerical point of view. The metric we use to assess the quality of our results is the trace relative error, defined as
+\[
+\frac{\|A - A_{\text{Nyst}}\|_*}{\|A\|_*},
+\]
+where \(\|\cdot\|_*\) is the nuclear norm. Since the nuclear norm is the sum of the singular values, \(\|A\|_* = \sigma_1(A) + \cdots + \sigma_n(A)\), this value describes the ratio of the sum of the singular values corresponding to the approximation error of \(A_{\text{Nyst}, k}\) compared to the original matrix \(A\).
 
-	Overall, increasing  consistently reduces relative errors across all datasets, as evident in Figures~\ref{fig:expdecay}-\ref{fig:polydecay}. This behavior is consistent with theoretical expectations that higher ranks retain more of the matrix’s variance. The improvement is most pronounced for Block SRHT on datasets with steep singular value decay, such as ExpDecay and PolyDecay. Larger sketching dimensions  enhance approximation quality for Gaussian Sketch, though the marginal gains diminish for . In contrast, Block SRHT’s performance remains stable across varying , emphasizing its adaptability and reduced sensitivity to the choice of sketching dimension.
-		\subsection{Performance analysis}
+If this value is low, we have a good low-rank approximation of \(A\).
+
+The ExpDecay dataset highlights the differences in numerical stability between Gaussian Sketch and Block SRHT. As shown in Figure~\ref{fig:expdecay}, Gaussian Sketch demonstrates a sharp and consistent decrease in relative error as the approximation rank \(k\) increases. This indicates that Gaussian Sketch is particularly effective for datasets with rapidly decaying spectra. In contrast, Block SRHT shows a more gradual reduction in relative error, suggesting that its structured embedding approach may be less adaptive in scenarios dominated by exponential decay.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{ExpDecay_stability.png}
+\caption{Numerical Stability Results for ExpDecay Dataset.}
+\label{fig:expdecay}
+\end{figure}
+
+For the MNIST dataset, illustrated in Figure~\ref{fig:mnist}, both sketching methods display steady improvements in relative error as \(k\) increases. Gaussian Sketch achieves slightly lower errors for smaller \(k\), making it advantageous in settings with limited computational resources. However, as \(k\) grows, the performance of the two methods converges, highlighting the robustness of the Block SRHT approach. Block SRHT maintains smoother error reduction trends across all \(k\) values, reflecting its superior numerical stability and consistency on this dataset.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{MNIST_stability.png}
+\caption{Numerical Stability Results for MNIST Dataset.}
+\label{fig:mnist}
+\end{figure}
+
+The PolyDecay dataset, depicted in Figure~\ref{fig:polydecay}, emphasizes the strong performance of Gaussian Sketch for datasets with polynomial spectral decay. Gaussian Sketch shows a pronounced and rapid reduction in relative error as \(k\) increases, significantly surpassing Block SRHT at higher ranks. This result highlights the flexibility of Gaussian Sketch for datasets with slower-decaying eigenvalues. Meanwhile, Block SRHT demonstrates a steadier reduction in error, showcasing its robustness and reliability for consistent approximations.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{PolyDecay_stability.png}
+\caption{Numerical Stability Results for PolyDecay Dataset.}
+\label{fig:polydecay}
+\end{figure}
+
+Overall, these results suggest that Gaussian Sketch excels in numerical accuracy, particularly for datasets with rapidly or polynomially decaying spectra. However, Block SRHT offers smoother error reduction trends and exceptional robustness, making it a reliable choice for distributed and large-scale computations. Further analysis of their computational efficiency will follow in subsequent sections.
+	\subsection{Performance analysis}
 		For these results to have some general relevance, we tried considering realistic values of $k$ and $l$. More specifically, $k$ was taken often around $n/20$, while $l$ was taken logaritmically spaced.
 	
 		When running in parallel, the number of processors was limited to values $P=2^{2s}$ with $s\in\mathbb{N}$. This was due to perfect square constraint of the parallelised matrix multiplication and the BSHRT's use of the Hadamard transform. The values of $P$ we choose were 1,4,16,64. 		
 		This also meant having to take $l\le n/64$ integer for the TSQR algorithm to at least have one block-row per processor at the start of its run. We also recall that to see speed-up with parallelisation we need the matrix to be tall-skinny. To have a good speed-up for a bigger $l$, while keeping numerical stability for ill-conditioned matrices another algo should be used.
-	\section{Algorithm Performance}
+	
+	
+		\section{Algorithm Performance}
         \subsection{Sequential Performance}
 		To explore the sequential runtimes of the implemented algorithms, we decided to do two longitudinal studies : first varying $l$ for a selected value of $n$, and then varying $n$ for a selected $l$. The associated results are represented in \ref{fig:runtimes-l-n-variation}. 
 
