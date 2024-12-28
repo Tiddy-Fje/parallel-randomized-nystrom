@@ -57,34 +57,31 @@ def generate_plots(A, n, ls, ks, methods, method_names, dataset_name, output_dir
 
 
 if __name__ == "__main__":
-    # Tara's impressions 
-    # - we need to be careful by taking l/n small enough to have a good sketching properties (so normal that we had bad values for larger l)
-    # - increasing k with l/n unappropriated will not help, and probably makes things worse by adding noise ??
-
-
     n = 2 ** 10
-    r = 2 * n // 4
-    log2_l_min, log2_l_max = 6, 9
-    ls = [100,200,300,400,500]
-    ks = np.linspace(25, max(ls), 10).astype(int)
+    r = 20
+
+    ls = [30, 100, 300]
+    ks =  np.concatenate( (np.linspace( 1, r+15, 10).astype(int),np.linspace( r+15, r+150, 10+1).astype(int)[1:] ) )
+
+    ls_exp = [30, 100, 161, 162]
+    ks_exp = np.concatenate( (np.linspace( 1, r+15, 10).astype(int),np.linspace( r+15, r+150, 10+1).astype(int)[1:] ) )
     output_dir = "../figures"
 
-    
+
     datasets = [
-        ("ExpDecay", synthetic_matrix(n, r, "fast", "exponential")),
-        ("PolyDecay", synthetic_matrix(n, r, "fast", "polynomial")),
-        ("MNIST", MNIST_matrix(n)),
+        ("ExpDecay", synthetic_matrix(n, r, "slow", "exponential")+0.e-1*np.eye(n), ls_exp, ks_exp)#,
+        #("PolyDecay", synthetic_matrix(n, r, "fast", "polynomial"), ls, ks)#,
+       # ("MNIST", MNIST_matrix(n), ls, ks),
         
     ]
-
    
     methods = [
-        sequential_gaussian_sketch,
-        block_SRHT_bis,
+        sequential_gaussian_sketch#,
+        #block_SRHT_bis,
     ]
     method_names = ["Gaussian Sketch", "Block SRHT Bis"]
 
     
-    for dataset_name, A in datasets:
+    for dataset_name, A, ls_, ks_ in datasets:
         print(f"Processing dataset: {dataset_name}...")
-        generate_plots(A, A.shape[0], ls, ks, methods, method_names, dataset_name, output_dir)
+        generate_plots(A, A.shape[0], ls_, ks_, methods, method_names, dataset_name, output_dir)

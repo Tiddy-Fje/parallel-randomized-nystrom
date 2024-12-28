@@ -134,7 +134,7 @@ def SRHT_sketching( A_ij, n, l, seed_factor, comm  ):
     
     return pm.assemble_B_C( C_ij, B_ij, n, l, comm, only_C=False )   
 
-def seq_rank_k_approx( B, C, n, k, alternative=False, return_A_k=True ):
+def seq_rank_k_approx( B, C, n, k, return_A_k=True ):
     '''
     Compute k-rank approximation of A from B and C.
 
@@ -148,27 +148,23 @@ def seq_rank_k_approx( B, C, n, k, alternative=False, return_A_k=True ):
     S_2 = None
     Q = None
     U = None
+
     try:
         L = np.linalg.cholesky(B)
-        Z = solve_triangular(L, C.T, lower=True).T
-        Q, R = np.linalg.qr(Z)
-        U, s, V = np.linalg.svd(R, full_matrices=False)
-        S_2 = s**2 
     except np.linalg.LinAlgError:
-        if not alternative:
-            lambdas, U = np.linalg.eigh(B)
-            Q, R = np.linalg.qr(C)
-            S_2 = lambdas
-        else:
-            lu, d, perm = ldl(B)
-            lu = lu @ np.sqrt(np.abs(d))
-            Lperm = lu[perm,:]
-            Cperm = C[:,perm]
-            Z = solve_triangular(Lperm, Cperm.T, lower=True).T
-            Q, R = np.linalg.qr(Z)
-            U, s, V = np.linalg.svd(R)
-            S_2 = s**2 
-
+        lambdas, U = np.linalg.eigh(B)
+        # first solution
+        lambdas[lambdas<0.0] = 0.0
+        # second solution
+        #lambdas = np.sign(lambdas) * np.sqrt( np.sign(lambdas) * lambdas )
+        L = U @ np.diag( np.sqrt(lambdas) ) @ U.T
+  
+    Z = solve_triangular(L, C.T, lower=True).T
+    Q, R = np.linalg.qr(Z)
+    U, s, V = np.linalg.svd(R, full_matrices=False)
+    S_2 = s**2 
+    #print(S_2)
+    #time.sleep(1)
     U_hat = Q @ U[:,:k] 
     S_2 = S_2[:k]
     S_2.reshape(1,-1)
@@ -200,7 +196,6 @@ def rank_k_approx( B, C, n, k, comm, return_A_k=True ):
         Z_l, shape = pm.row_distrib_mat( Z, comm, return_shape=True)
         Ys, R = pm.TSQR( Z_l, comm )
         Q = pm.build_Q_bis( Ys, comm )
-        #Q, R = pm.parallel_CQR( Z_l, shape[0], shape[1], comm ) 
         if rank==0: 
             U, s, V = np.linalg.svd(R, full_matrices=False) # only rank 0 has QR results
             S_2 = s**2 
@@ -210,8 +205,7 @@ def rank_k_approx( B, C, n, k, comm, return_A_k=True ):
         tsqr_start = time.perf_counter()
         Ys, R = pm.TSQR( C_l, comm )
         tsqr_end = time.perf_counter()
-        Q = pm.build_Q_bis( Ys, comm ) # THIS TAKES A LOT OF TIME
-        #Q, R = pm.parallel_CQR( C_l, shape[0], shape[1], comm ) # 
+        Q = pm.build_Q_bis( Ys, comm ) 
         if rank == 0:    
             S_2 = lambdas 
             U = U[:,:k]
