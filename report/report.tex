@@ -15,72 +15,71 @@
 	\setcounter{page}{1}
 
 	\section{Introduction}
-	In this project, we study the randomized Nyström approximation algorithm for the low-rank approximation of a positive-semidefinite matrix $A \in \mathbb{R}^{n \times n}$. There are several important applications for this theory, such as image processing, PCA, or solving integral equations. However, the most common practical setting are kernel methods for large-scale machine-learning problems. Since these algorithms scale at least quadratic in the number of data points, low-rank approximations are essential to obtain reasonable storage usage and computational costs.
+	In this project, we study the randomized Nystr\"om approximation algorithm for the low-rank approximation of a positive-semidefinite matrix $A \in \mathbb{R}^{n \times n}$. There are several important applications for this theory, such as image processing, PCA, or solving integral equations. However, the most common practical setting are kernel methods for large-scale machine-learning problems. Since these algorithms scale at least quadratic in the number of data points, low-rank approximations are essential to obtain reasonable storage usage and computational costs.
 	
-	The randomized Nyström approximation is based on a random sketching matrix $\Omega \in \mathbb{R}^{n \times l}$ and the formula:
-	\begin{equation*}
-	A_{N y s t}=(A \Omega)\left(\Omega^T A \Omega\right)^{\dagger}\left(\Omega^T A\right)
-	\end{equation*}
-	where $l \ll n$ is the sketching dimension and $\left(\Omega^T A \Omega\right)^{\dagger}$ denotes the pseudo-inverse. In particular, the algorithm we used computes a fixed-rank $k \leq l$ approximation by truncating the sketched matrix $A_{N y s t}$. Our goal is to efficiently parallelize this alogrithm. Key aspects of our investigations are numerical stability, scalability, performance (in terms of runtime), and the approximation of the leading $k$ singular values of $A$.
-	\section{Randomized Nyström low rank approximation}
+	%The randomized Nystr\"om approximation is based on a random sketching matrix $\Omega \in \mathbb{R}^{n \times l}$ and the formula:
+	%\begin{equation*}
+	%A_{N y s t}=(A \Omega)\left(\Omega^T A \Omega\right)^{\dagger}\left(\Omega^T A\right)
+	%\end{equation*}
+	%where $l \ll n$ is the sketching dimension and $\left(\Omega^T A %\Omega\right)^{\dagger}$ denotes the pseudo-inverse. 
+	%In particular, the algorithm we used computes a fixed-rank $k \leq l$ approximation by truncating the sketched matrix $A_{N y s t}$. 
+	Our goal is to efficiently parallelize this alogrithm. Key aspects of our investigations are numerical stability, scalability, performance (in terms of runtime), and the approximation of the leading $k$ singular values of $A$.
+	\section{Randomized Nystr\"om low rank approximation}
 	The goal of the Randomized Nystr\"om Algorithm is to represent a given matrix $A \in \mathbb{R}^{n \times n}$ by some lower rank $k<n$ approximation. The starting point of the algorithm is a rank-$\ell$ approximation of $A$, in the form
 	\[
 	A_{Nyst} := (A\Omega)(\Omega^T A \Omega)^{\dagger}(\Omega^T A) \in \mathbb{R}^{n \times n},
 	\]
 	where $(\Omega^T A \Omega)^\dagger$ is the pseudoinverse of $\Omega^T A \Omega$ and $\Omega \in \mathbb{R}^{n \times \ell}$ is a sketching matrix. We assume $k < \ell < n$. To further reduce the rank of $A_{Nyst}$ to $k$, we have two choices: approximate only the core matrix $\Omega^T A \Omega$ or the whole $A_{Nyst}$. In this project, we focus on the second approach. Algorithm \ref{alg:nystrom} shows how this can be achieved.
+	\begin{algorithm}[H]
+	\caption{Randomized Nystr\"om approximation using the Cholesky decomposition}
+	\label{alg:nystrom}
+	\begin{algorithmic}[1]
+	\State Let $C = A\Omega$ and $B = \Omega^T C$.
+	\State Compute the Cholesky decomposition: $B = LL^T$.
+	\State Solve the linear system using back substitution: $Z = C(L^T)^{-1}$.
+	\State Perform QR decomposition: $Z = QR$.
+	\State Compute the singular value decomposition (SVD) of $R$ and truncate:
+	\[ R = U \Sigma V^T \approx \tilde{U}_k \tilde{\Sigma}_k \tilde{V}_k^T. \]
+	\State Set $\tilde{U}_k = Q{U}_k$ and return $\tilde{U}_k \tilde{\Sigma}_k^2 \tilde{U}_k^T \approx A_{Nyst}$.
+	\end{algorithmic}
+	\end{algorithm}
+	To show why the result of Algorithm \ref{alg:nystrom} is in fact a rank-$k$ approximation of $A_{Nyst}$, we write
+	\begin{align*}
+	\tilde{U}_k \tilde{\Sigma}_k^2 \tilde{U}_k^T &= Q{U}_k \tilde{\Sigma}_k {\Sigma}_k^T \tilde{U}_k^T Q^T \\
+	&\approx QR(VV^T)R^T Q^T = ZZ^T = A\Omega(L^T)^{-1}(L)^{-1}\Omega^T A^T \\
+	&= A\Omega(LL^T)^{-1}\Omega^T A = A\Omega(\Omega^T A \Omega)^{-1}\Omega^T A.
+	\end{align*}
+	However, here we have the inverse of $\Omega^T A \Omega$ instead of its pseudoinverse. Unfortunately, Algorithm \ref{alg:nystrom} fails in Step 2 if $\Omega^T A \Omega$ is numerically singular. In this case, as in \cite{reference}, we replace $L$ by a square root of $B$ in SVD form. Specifically, we write $B = U_B \Sigma_B U_B^T$ (since $B$ is SPSD), and set $L = U_B \sqrt{\Sigma_B} U_B^T$. By construction, we have
+	\[
+	LL^T = U_B \sqrt{\Sigma_B} U_B^T (U_B \sqrt{\Sigma_B} U_B^T)^T = U_B \Sigma_B U_B^T = B.
+	\]
+	We then replace $(L^T)^{-1}$ with $(L^T)^\dagger$. This can be simply calculated as
+	\[
+	(L^T)^\dagger = (U_B \sqrt{\Sigma_B} U_B^T)^\dagger,
+	\]
+	where $\sqrt{\Sigma_B}$ is a diagonal matrix whose entries are given by the square roots of those of $\Sigma_B$.
+	%\[
+	%(\sqrt{\Sigma_B})_{i,i} = \begin{cases} \frac{1}{(\sqrt{\Sigma_B})_{i,i}} & \text{if } (\sqrt{\Sigma_B})_{i,i} \neq 0, \\
+	%0 & \text{otherwise.} \end{cases}
+	%\]
+	\section{Sketching and Sketching Matrices}
 
-\begin{algorithm}
-\caption{Randomized Nystr\"om approximation using the Cholesky decomposition}
-\label{alg:nystrom}
-\begin{algorithmic}[1]
-  \State Let $C = A\Omega$ and $B = \Omega^T C$.
-  \State Compute the Cholesky decomposition: $B = LL^T$.
-  \State Solve the linear system using back substitution: $Z = C(L^T)^{-1}$.
-  \State Perform QR decomposition: $Z = QR$.
-  \State Compute the singular value decomposition (SVD) of $R$ and truncate:
-  \[ R = U \Sigma V^T \approx \tilde{U}_k \tilde{\Sigma}_k \tilde{V}_k^T. \]
-  \State Set $\tilde{U}_k = Q\tilde{U}_k$ (or equivalently $\tilde{U}_k = Z\tilde{V}_k\tilde{\Sigma}_k^{-1}$) and return $\tilde{U}_k \tilde{\Sigma}_k^2 \tilde{U}_k^T \approx A_{Nyst}$.
-\end{algorithmic}
-\end{algorithm}
+	In this section, we provide a detailed overview of sketching and the sketching matrices utilized in this project. The concept of sketching involves transforming a high-dimensional matrix $A \in \mathbb{R}^{n \times n}$ into a lower-dimensional representation $A\Omega$, where $\Omega \in \mathbb{R}^{n \times \ell}$ is a tall and skinny sketching matrix. The goal of sketching is to embed the high-dimensional data into a reduced-dimensional space while preserving the essential geometric properties of the data.
 
-To show why the result of Algorithm \ref{alg:nystrom} is in fact a rank-$k$ approximation of $A_{Nyst}$, we write
-\begin{align*}
-\tilde{U}_k \tilde{\Sigma}_k^2 \tilde{U}_k^T &= Q\tilde{U}_k \tilde{\Sigma}_k \tilde{\Sigma}_k^T \tilde{U}_k^T Q^T \\
-&\approx QRR^T Q^T = ZZ^T = A\Omega(L^T)^{-1}(L^T)^{-1}\Omega^T A^T \\
-&= A\Omega(LL^T)^{-1}\Omega^T A^T = A(\Omega^T A \Omega)^{\dagger}\Omega^T A^T.
-\end{align*}
+	More formally, given any two vectors $x$ and $y$ in the high-dimensional space, their sketched counterparts $\hat{x}$ and $\hat{y}$ should approximately preserve their inner product:
+	\begin{equation}\label{eq:1}
+	\left| \langle \hat{x}, \hat{y} \rangle - \langle x, y \rangle \right| \leq \varepsilon \|x\|_2 \|y\|_2 \tag{2}
+	\end{equation}
+	where $\varepsilon > 0$ is a small approximation error. However, achieving this exact preservation for all $x$ and $y$ is generally infeasible due to the reduced dimensionality $\ell$. Instead, $\Omega$ is typically regarded as a random matrix, ensuring that \cref{eq:1} holds with high probability $1 - \delta$, where $\delta < 1$.
 
-However, here we have the inverse of $\Omega^T A \Omega$ instead of its pseudoinverse. Unfortunately, Algorithm \ref{alg:nystrom} fails in Step 2 if $\Omega^T A \Omega$ is numerically singular. In this case, as in \cite{reference}, we replace $L$ by a square root of $B$ in SVD form. Specifically, we write $B = U_B \Sigma_B U_B^T$ (since $B$ is SPSD), and set $L = U_B \sqrt{\Sigma_B} U_B^T$. By construction, we have
-\[
-LL^T = U_B \sqrt{\Sigma_B} U_B^T (U_B \sqrt{\Sigma_B} U_B^T)^T = U_B \Sigma_B U_B^T = B.
-\]
-We then replace $(L^T)^{-1}$ with $(L^T)^\dagger$. This can be simply calculated as
-\[
-(L^T)^\dagger = (U_B \sqrt{\Sigma_B} U_B^T)^\dagger,
-\]
-where $\sqrt{\Sigma_B}$ is a diagonal matrix whose entries are given by
-\[
-(\sqrt{\Sigma_B})_{i,i} = \begin{cases} \frac{1}{(\sqrt{\Sigma_B})_{i,i}} & \text{if } (\sqrt{\Sigma_B})_{i,i} \neq 0, \\
-0 & \text{otherwise.} \end{cases}
-\]
-\section{Sketching and Sketching Matrices}
-
-In this section, we provide a detailed overview of sketching and the sketching matrices utilized in this project. The concept of sketching involves transforming a high-dimensional matrix $A \in \mathbb{R}^{n \times n}$ into a lower-dimensional representation $A\Omega$, where $\Omega \in \mathbb{R}^{n \times \ell}$ is a tall and skinny sketching matrix. The goal of sketching is to embed the high-dimensional data into a reduced-dimensional space while preserving the essential geometric properties of the data.
-
-More formally, given any two vectors $x$ and $y$ in the high-dimensional space, their sketched counterparts $\hat{x}$ and $\hat{y}$ should approximately preserve their inner product:
-\begin{equation}\label{eq:1}
-\left| \langle \hat{x}, \hat{y} \rangle - \langle x, y \rangle \right| \leq \varepsilon \|x\|_2 \|y\|_2 \tag{2}
-\end{equation}
-where $\varepsilon > 0$ is a small approximation error. However, achieving this exact preservation for all $x$ and $y$ is generally infeasible due to the reduced dimensionality $\ell$. Instead, $\Omega$ is typically regarded as a random matrix, ensuring that \cref{eq:1} holds with high probability $1 - \delta$, where $\delta < 1$.
-
-In this project, we employ two specific types of sketching matrices:
-\subsection{Gaussian sketching }
-The Gaussian sketching matrix is random projection method in which the entries of the sketching matrix $\Omega$ are drawn independently from a standard normal distribution. Mathematically, it is defined as:
-\[
-\Omega_{ij} \sim \mathcal{N}(0, 1).
-\]
-%where $\Omega \in \mathbb{R}^{n \times \ell}$, and $\ell$ represents the reduced dimensionality of the sketch.
-% this is not necessary, as we already defined Omega above
+	In this project, we employ two specific types of sketching matrices:
+	\subsection{Gaussian sketching }
+	The Gaussian sketching matrix is random projection method in which the entries of the sketching matrix $\Omega$ are drawn independently from a standard normal distribution. Mathematically, it is defined as:
+	\[
+	\Omega_{ij} \sim \mathcal{N}(0, 1).
+	\]
+	%where $\Omega \in \mathbb{R}^{n \times \ell}$, and $\ell$ represents the reduced dimensionality of the sketch.
+	% this is not necessary, as we already defined Omega above
 
 This method is such that for an input matrix $A \in \mathbb{R}^{n \times d}$ and for any vector $x \in \mathbb{R}^l$:
 \[
@@ -194,7 +193,7 @@ This structure is particularly suited for distributed computations, as it allows
 	%with processor $i$ having the $i$-th row of $S$ and the $i$-th block row of $T$. Then
 	%$A \Omega,\Omega^T A \Omega$ multiplications were implemented 
 	%The matrix $A$ is distributed among processors by using a two-dimensional block distribution while the matrix $\Omega$ is distributed using a block row distribution. The parallelization of the algorithm is implemented in the following way:
-	%Describe how you parallelize randomized Nyström and provide pseudo-code of the parallel algorithm. For the parallelization, the matrix $A$ should be distributed among processors by using a two-dimensional block distribution while the matrix $\Omega$ should be distributed using a block row distribution. You can consider that the number of processors is a power of 2 such that you can easily distribute the matrices among processors. For example, when $P=\sqrt{P} \times \sqrt{P}=9$, the matrices $A$ and $\Omega$ are distributed as:
+	%Describe how you parallelize randomized Nystr\"om and provide pseudo-code of the parallel algorithm. For the parallelization, the matrix $A$ should be distributed among processors by using a two-dimensional block distribution while the matrix $\Omega$ should be distributed using a block row distribution. You can consider that the number of processors is a power of 2 such that you can easily distribute the matrices among processors. For example, when $P=\sqrt{P} \times \sqrt{P}=9$, the matrices $A$ and $\Omega$ are distributed as:
 	\section{Experimental procedure}
 		The presented results were obtained by running our scripts on the Helvetios cluster, by averaging over different runs to make results more robust and interpretable.
 		
@@ -230,28 +229,24 @@ where \(\|\cdot\|_*\) is the nuclear norm. Since the nuclear norm is the sum of 
 If this value is low, we have a good low-rank approximation of \(A\).
 
 The ExpDecay dataset highlights the differences in numerical stability between Gaussian Sketch and Block SRHT. As shown in Figure~\ref{fig:expdecay}, Gaussian Sketch demonstrates a sharp and consistent decrease in relative error as the approximation rank \(k\) increases. This indicates that Gaussian Sketch is particularly effective for datasets with rapidly decaying spectra. In contrast, Block SRHT shows a more gradual reduction in relative error, suggesting that its structured embedding approach may be less adaptive in scenarios dominated by exponential decay.
-
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{ExpDecay_stability.png}
+\includegraphics[width=0.7\textwidth]{ExpDecay_stability.png}
 \caption{Numerical Stability Results for ExpDecay Dataset.}
 \label{fig:expdecay}
 \end{figure}
-
 For the MNIST dataset, illustrated in Figure~\ref{fig:mnist}, both sketching methods display steady improvements in relative error as \(k\) increases. Gaussian Sketch achieves slightly lower errors for smaller \(k\), making it advantageous in settings with limited computational resources. However, as \(k\) grows, the performance of the two methods converges, highlighting the robustness of the Block SRHT approach. Block SRHT maintains smoother error reduction trends across all \(k\) values, reflecting its superior numerical stability and consistency on this dataset.
-
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{MNIST_stability.png}
+\includegraphics[width=0.7\textwidth]{MNIST_stability.png}
 \caption{Numerical Stability Results for MNIST Dataset.}
 \label{fig:mnist}
 \end{figure}
-
 The PolyDecay dataset, depicted in Figure~\ref{fig:polydecay}, emphasizes the strong performance of Gaussian Sketch for datasets with polynomial spectral decay. Gaussian Sketch shows a pronounced and rapid reduction in relative error as \(k\) increases, significantly surpassing Block SRHT at higher ranks. This result highlights the flexibility of Gaussian Sketch for datasets with slower-decaying eigenvalues. Meanwhile, Block SRHT demonstrates a steadier reduction in error, showcasing its robustness and reliability for consistent approximations.
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{PolyDecay_stability.png}
+\includegraphics[width=0.7\textwidth]{PolyDecay_stability.png}
 \caption{Numerical Stability Results for PolyDecay Dataset.}
 \label{fig:polydecay}
 \end{figure}
@@ -288,7 +283,8 @@ Overall, these results suggest that Gaussian Sketch excels in numerical accuracy
 
 		As for the $k$-rank approximation runtimes, the linear increase as a function of $n$ is hard to see on the plot due to the different scale. 
         \subsection{Parallel Performance}
-			We now turn to the analysis of the parallel performance. The relevant plot for this section is \ref{fig:runtimes-cores-variation}. For the sake of structure, we analyse separately the small and the large runs.
+			We now turn to the analysis of the parallel performance. The relevant plot for this section is \ref{fig:runtimes-cores-variation}. 
+			%For the sake of structure, we analyse separately the small and the large runs.
 			\begin{figure}[htb]       
 				\centering             
 					\vspace{0em}
@@ -296,12 +292,12 @@ Overall, these results suggest that Gaussian Sketch excels in numerical accuracy
 					\caption{Runtimes associated to the tested sketching methods as a function of the number of cores : for a ``small'' example (left) and a ``large'' one (right). Runtimes are broken down in that associated to the computation of $A\Omega,\Omega^T A\Omega$ and that associated to the computation of the $k$ rank approximation.}
 					\label{fig:runtimes-cores-variation}
 			\end{figure}
-			\paragraph{Small run}
+			%\paragraph{Small run}
 			For the small run we first observe that some speed-up is displayed as a function of number of cores for both sketching methods. The speed-up is quasi-linear for BRSHT, while it saturates and back-fires for Gaussian sketching, due to the communication overhead. Given that the $k$-rank approximation part of the computation is smaller, it is most affected by the cost of communication, which actually dominates all throughout the core-number sweep.   
 			These behaviours are expected given that : (a) the computation is rather small to be run in parallel; (b) BRSHT is slower than Gaussian sketching for small values of $l$. 
 			
 			For the specific parameter values selected, Gaussian sketching is a factor $\approx 10$ faster than BRSHT (except $P=64$).
-			\paragraph{Large run}
+			%\paragraph{Large run}
 			For the large run the results are quite different. Communication is not an issue for the sketching part, meaning that quasi-linear speed-ups are observed for both methods. This means the parallelization is successful and scales well for big computations. We also observe initial speed-up for the $k$-rank approximation, though it is short-lived due to the computation still being quite small and due to that the matrix is not that tall-skinny (reducing the benefit in the QR decomposition). 
 	\section{Conclusion}
 	\section*{Aknowledgements}
