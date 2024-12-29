@@ -1,5 +1,4 @@
 import numpy as np
-import scipy.sparse as sp
 from matplotlib import pyplot as plt
 import h5py
 import data_generation as dg

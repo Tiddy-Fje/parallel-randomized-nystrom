@@ -177,7 +177,7 @@
 	The ExpDecay dataset highlights the differences in numerical stability between Gaussian Sketch and Block SRHT. As shown in Figure~\ref{fig:expdecay}, Gaussian Sketch demonstrates a sharp and consistent decrease in relative error as the approximation rank \(k\) increases. This indicates that Gaussian Sketch is particularly effective for datasets with rapidly decaying spectra. In contrast, Block SRHT shows a more gradual reduction in relative error, suggesting that its structured embedding approach may be less adaptive in scenarios dominated by exponential decay.
 	\begin{figure}[H]
 	\centering
-	\includegraphics[width=0.7\textwidth]{ExpDecay_stability.png}
+	\includegraphics[width=0.95\textwidth]{exp_decay_stability.png}
 	\caption{Numerical Stability Results for ExpDecay Dataset.}
 	\label{fig:expdecay}
 	\end{figure}
@@ -188,14 +188,14 @@
 	Block SRHT maintains smoother error reduction trends across all \(k\) values, reflecting its superior numerical stability and consistency on this dataset.
 	\begin{figure}[H]
 	\centering
-	\includegraphics[width=0.7\textwidth]{MNIST_stability.png}
+	\includegraphics[width=0.55\textwidth]{MNIST_stability.png}
 	\caption{Numerical Stability Results for MNIST Dataset.}
 	\label{fig:mnist}
 	\end{figure}
 	The PolyDecay dataset, depicted in Figure~\ref{fig:polydecay}, emphasizes the strong performance of Gaussian Sketch for datasets with polynomial spectral decay. Gaussian Sketch shows a pronounced and rapid reduction in relative error as \(k\) increases, significantly surpassing Block SRHT at higher ranks. This result highlights the flexibility of Gaussian Sketch for datasets with slower-decaying eigenvalues. Meanwhile, Block SRHT demonstrates a steadier reduction in error, showcasing its robustness and reliability for consistent approximations.
 	\begin{figure}[H]
 	\centering
-	\includegraphics[width=0.7\textwidth]{PolyDecay_stability.png}
+	\includegraphics[width=0.95\textwidth]{poly_decay_stability.png}
 	\caption{Numerical Stability Results for PolyDecay Dataset.}
 	\label{fig:polydecay}
 	\end{figure}

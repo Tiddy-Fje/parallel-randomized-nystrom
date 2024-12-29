@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib.cm as cm
 import scipy.sparse as sp
+import plot
 
 # Define synthetic_matrix function
 def synthetic_matrix(n, r, decay_rate, decay_type):
