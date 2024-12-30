@@ -164,64 +164,67 @@
 		\caption{Singular value decay of synthetic matrices (left) and the MNIST-based similarity matrix (right).}
 		\label{fig:singular_value_comparison}
 	\end{figure}
-		\subsection{Stability analysis}
-		This section evaluates the numerical performance and stability of Gaussian Sketching and Block Subsampled Randomized Hadamard Transform (BSRHT) for low-rank matrix approximations. The trace-relative error, defined as 
+	\subsection{Stability analysis}
+	This section evaluates the numerical performance and stability of Gaussian Sketching and Block Subsampled Randomized Hadamard Transform (BSRHT) for low-rank matrix approximations. The trace-relative error, defined as 
 
-		\begin{equation}
-		\frac{\|A - A_{\text{approx}}\|_*}{\|A\|_*},
-		\end{equation}
-		
-		where $\|\cdot\|_*$ represents the nuclear norm, is used to quantify the quality of the approximations. Smaller trace-relative error values indicate higher approximation quality. Additionally, the alignment of numerical results with theoretical guarantees established by the Oblivious Subspace Embedding (OSE) property is examined.
-		
-		The theoretical framework ensures that both Gaussian Sketching and BSRHT satisfy the $(\epsilon, \delta, d)$ OSE property. For Gaussian Sketching, the embedding dimension $l$ is given by:
-		\begin{equation}
-		l = \mathcal{O}\left(\epsilon^{-2}(d + \ln \frac{1}{\delta})\right),
-		\end{equation}
-		ensuring accurate approximations for any target rank $d$ with high probability. For BSRHT, the embedding dimension is:
-		\begin{equation}
-		l = \mathcal{O}\left(\epsilon^{-2}(d + \ln \frac{n}{\delta}) \ln \frac{d}{\delta}\right),
-		\end{equation}
-		making it scalable and efficient in distributed environments.
-		
-		Both methods conform to the following error bound:
-		\begin{equation}
-		\|A - A_{\text{approx}}\|_* \leq (1 + \epsilon) \|A - [[A]]_d\|_*,
-		\end{equation}
-		where $[[A]]_d$ is the optimal rank-$d$ approximation of $A$.
-		\paragraph{Slow Exponential Decay:}
+	\begin{equation}
+	\frac{\|A - A_{\text{approx}}\|_*}{\|A\|_*},
+	\end{equation}
+	
+	where $\|\cdot\|_*$ represents the nuclear norm, is used to quantify the quality of the approximations. Smaller trace-relative error values indicate higher approximation quality. Additionally, the alignment of numerical results with theoretical guarantees established by the Oblivious Subspace Embedding (OSE) property is examined.
+	
+	The theoretical framework ensures that both Gaussian Sketching and BSRHT satisfy the $(\epsilon, \delta, d)$ OSE property. For Gaussian Sketching, the embedding dimension $l$ is given by:
+	\begin{equation}
+	l = \mathcal{O}\left(\epsilon^{-2}(d + \ln \frac{1}{\delta})\right),
+	\end{equation}
+	ensuring accurate approximations for any target rank $d$ with high probability. For BSRHT, the embedding dimension is:
+	\begin{equation}
+	l = \mathcal{O}\left(\epsilon^{-2}(d + \ln \frac{n}{\delta}) \ln \frac{d}{\delta}\right),
+	\end{equation}
+	making it scalable and efficient in distributed environments.
+	
+	Both methods conform to the following error bound:
+	\begin{equation}
+	\|A - A_{\text{approx}}\|_* \leq (1 + \epsilon) \|A - [[A]]_d\|_*,
+	\end{equation}
+	where $[[A]]_d$ is the optimal rank-$d$ approximation of $A$.
+
+	\paragraph{Slow Exponential Decay:}
+
 The results (Figure~\ref{fig:slow_fast_exp_decay}, left) show that Gaussian outperforms BSRHT Sketching for all ranks when $l$ is small (e.g., $l = 15$ or $l = 20$). 
-As $l$ increases, we run into a problem :Tara fills . 
+As $l$ increases for example $l=170$ , we run into a problem :Tara fills . 
 
 
 \paragraph{Fast Exponential Decay:}
-For fast decaying spectra (Figure~\ref{fig:slow_fast_exp_decay}, right), Gaussian Sketching dominates at all ranks and embedding dimensions, showing superior accuracy. However, both Gaussian Sketching and BSRHT at $l=162$ display unexpected behavior, where the relative error does not decrease smoothly as expected for larger embedding 
+For fast decaying spectra (Figure~\ref{fig:slow_fast_exp_decay}, right), Gaussian Sketching dominates at all ranks and embedding dimensions, showing superior accuracy. 
+However, both Gaussian Sketching and BSRHT at $l=37$ display unexpected behavior, 
+where the relative error does not decrease smoothly as expected for larger embedding 
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.8\textwidth]{exp_decay_stability_custom.png}
-    \caption{}
-    \label{fig:slow_fast_exp_decay}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{exp_decay_stability_custom.png}
+\caption{}
+\label{fig:slow_fast_exp_decay}
 \end{figure}
+
 \paragraph{Slow Polynomial Decay:} 
-For slow exponential decay (Figure~\ref{fig:slow_fast_exp_decay}, left), Gaussian Sketching and BSRHT exhibit similar trends, but both methods show irregular behavior at larger embedding dimensions. 
-Specifically, at $l=170$, both methods fail to consistently reduce their relative error at higher ranks
+For slow exponential decay (Figure~\ref{fig:poly_decay}, left), both Gaussian Sketching and BSRHT exhibit similar trends, with Gaussian Sketching showing slightly better performance. However, as \( l \) increases, their performance becomes nearly identical.
 
 \paragraph{Fast Polynomial Decay:} 
-For fast decaying spectra (Figure~\ref{fig:slow_fast_exp_decay}, right), Gaussian Sketching outperforms BSRHT at all ranks and embedding dimensions.
- However, at $l=37$, both Gaussian Sketching and BSRHT show irregular behavior
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.8\textwidth]{poly_decay_stability_custom.png}
-    \caption{}
-    \label{fig:poly_decay}
+n the fast polynomial decay scenario (Figure~\ref{fig:poly_decay}, right), Gaussian Sketching consistently outperforms BSRHT across all ranks and embedding dimensions. The relative errors for Gaussian Sketching decrease significantly as the rank increases, particularly for $l = 100$ and $l = 300$. In contrast, BSRHT shows a slower reduction in error, and its performance plateaus at higher ranks.
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{poly_decay_stability_custom.png}
+\caption{}
+\label{fig:poly_decay}
 \end{figure}
 \paragraph{MNIST}
 The two methods exhibit almost identical behavior, with a minor difference at lower ranks, which completely disappears as the rank increases, as shown in Figure ~\ref{fig:mnsit_decay}.
- \begin{figure}[h]
-    \centering
-    \includegraphics[width=0.45\textwidth]{MNIST_stability.png}
-    \caption{}
-    \label{fig:mnsit_decay}
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.45\textwidth]{MNIST_stability.png}
+\caption{}
+\label{fig:mnsit_decay}
 \end{figure}
 	\subsection{Performance analysis}
 		For these results to have some general relevance, we tried considering realistic values of $k$ and $l$. More specifically, $k$ was taken often around $n/20$, while $l$ was taken logaritmically spaced.
