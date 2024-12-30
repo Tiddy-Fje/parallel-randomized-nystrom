@@ -101,7 +101,6 @@
 	This structure is particularly suited for distributed computations, as it allows for parallelism while maintaining the theoretical properties of the SRHT.
 	\section{Parallelisation}
 	We parallelise the algorithm by distributing among the processors the computation of $A \Omega,\Omega^T A \Omega$, and all other matrix operations with complexities at least proportional to $n$. 
-	Since parallelisation of QR factorisation was the topic of the first project we included the relevant functions for it in the code folder and used them when needed. The parallelisation of matrix products was however implemented from scratch. It was done as described in algorithm \ref{alg:parallel-matrix-product}, by distributing matrices smartly among the processors. 
 	\begin{algorithm}[H]
 		\caption{Computes the matrix product of two matrices $D$ and $E$ in parallel. The syntax was adapted from an Overleaf example [2].}\label{alg:parallel-matrix-product}
 		\begin{algorithmic}
@@ -118,7 +117,7 @@
 		\EndIf
 		\end{algorithmic}
 	\end{algorithm}
-	This version of the matrix product allows for a fluid computation of both the $A \Omega,\Omega^T A \Omega$ products involved in the sketching and general matrix products between two matrices which appear in the computation of the rank-$k$ approximation. 
+	Since parallelisation of QR factorisation was the topic of the first project we included the relevant functions for it in the code folder and used them when needed. The parallelisation of matrix products was however implemented from scratch. It was done as described in algorithm \ref{alg:parallel-matrix-product}, by distributing matrices smartly among the processors. This version of the matrix product allows for a fluid computation of both the $A \Omega,\Omega^T A \Omega$ products involved in the sketching and general matrix products between two matrices which appear in the computation of the rank-$k$ approximation. 
 	
 	The pseudo-code for the parallelisation of the randomized Nystr\"om algorithm is then described in algorithm \ref{alg:parallel-rand-nystrom}.
 	\begin{algorithm}[htb]
@@ -144,14 +143,14 @@
 		\end{algorithmic}
 	\end{algorithm}
 	\section{Experimental Procedure}
-		The presented results were obtained by running our scripts on the Helvetios cluster and averaging over different runs to make results more robust and interpretable.
+		The presented results were obtained by running our scripts on the Helvetios cluster and averaging over different runs to make results more robust and interpretable. 
 		
 		In general, due to the BSRHT making use of the Hadamard transformation, $n$ was made vary as powers of $2$ only. In reality one can always zero-pad the data to ensure that the Hadamard transformation can be applied. This was however avoided for performance analysis since it would have introduced unnecessary variation in the measurements.  
 		\subsection{Datasets}
 		Following the approach of [3], we consider two types of datasets to evaluate the performance of our methods: synthetic datasets and those derived from the MNIST dataset. For the synthetic datasets, we construct diagonal matrices with positive eigenvalues and different rates of decay for the singular values. We explore both \textit{polynomial decay} and \textit{exponential decay}, with rates categorized as \textit{slow}, \textit{medium}, and \textit{fast}. The diagonal structure allows us to easily select the singular values and define an effective rank \( R \) for the matrices. This design provides controlled conditions for studying spectral properties and their influence on algorithmic performance.
 
 	For the datasets derived from MNIST, we normalize the data to have values in the range \([0, 1]\) and use a subset of \( n \) data points. A similarity matrix is then constructed using the radial basis function (RBF), defined as:
-	$A_{ij} = e^{-\|x_i - x_j\|^2 / c^2}$, where \( x_i \) and \( x_j \) are data samples, and \( c \) is a tunable parameter controlling the penalty for dissimilarity. This results in a symmetric, dense \( n \times n \) matrix, where \( c \) determines how rapidly similarity decreases with distance. 
+	$A_{ij} = e^{-\|x_i - x_j\|^2 / c^2}$, where \( x_i \) and \( x_j \) are data samples, and \( c \) is a tunable parameter controlling the penalty for dissimilarity. This results in a symmetric, dense \( n \times n \) matrix, where \( c \) determines how rapidly similarity decreases with distance (we fixed $c$ to 10). 
 
 	We visualize the singular value decay of these datasets in Figure~\ref{fig:singular_value_comparison}, which highlights the differences between the decay patterns for the synthetic matrices and the RBF-based similarity matrices derived from MNIST.
 	\begin{figure}[H]
@@ -163,21 +162,19 @@
 		\label{fig:singular_value_comparison}
 	\end{figure}
 	\subsection{Stability Analysis}
-	This section evaluates the numerical performance and stability of Gaussian Sketching and Block Subsampled Randomized Hadamard Transform (BSRHT) for low-rank matrix approximations. The trace-relative error, defined as 
-
+	This section evaluates the numerical performance and stability of Gaussian and BSRHT sketching for low-rank matrix approximations. The trace-relative error, defined as 
 	\begin{equation}
 	\frac{\|A - A_{\text{approx}}\|_*}{\|A\|_*},
 	\end{equation}
-	
 	where $\|\cdot\|_*$ represents the nuclear norm, is used to quantify the quality of the approximations. Smaller trace-relative error values indicate higher approximation quality. Additionally, the alignment of numerical results with theoretical guarantees established by the Oblivious Subspace Embedding (OSE) property is examined.
 	
-	The theoretical framework ensures that both Gaussian Sketching and BSRHT satisfy the $(\epsilon, \delta, d)$ OSE property. For Gaussian Sketching, the embedding dimension $l$ is given by:
+	The theoretical framework ensures that both Gaussian Sketching and BSRHT satisfy the $(\epsilon, \delta, n)$ OSE property. For Gaussian Sketching, the embedding dimension $l$ is of order :
 	\begin{equation}
-	l = \mathcal{O}\left(\epsilon^{-2}(d + \ln \frac{1}{\delta})\right),
+	l = \mathcal{O}\left(\epsilon^{-2}\left(n + \ln \frac{1}{\delta}\right)\right),
 	\end{equation}
-	ensuring accurate approximations for any target rank $d$ with high probability. For BSRHT, the embedding dimension is:
+	ensuring accurate approximations with high probability. For BSRHT, the embedding dimension is of order:
 	\begin{equation}
-	l = \mathcal{O}\left(\epsilon^{-2}(d + \ln \frac{n}{\delta}) \ln \frac{d}{\delta}\right),
+	l = \mathcal{O}\left(\epsilon^{-2}\left(n + \ln \frac{n}{\delta}\right)) \ln \frac{d}{\delta}\right),
 	\end{equation}
 	making it scalable and efficient in distributed environments.
 	
@@ -200,7 +197,7 @@ where the relative error does not decrease smoothly as expected for larger embed
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.975\textwidth]{exp_decay_stability_custom.png}
+\includegraphics[width=0.95\textwidth]{exp_decay_stability_custom.png}
 \caption{Relative error as a function of approximation-rank for different values of sketching dimension $l$ and both sketching methods. Dataset is taken as exponential (a) slowly-decaying and (b) fastly-decaying singular values.}
 \label{fig:slow_fast_exp_decay}
 \end{figure}
@@ -212,7 +209,7 @@ For slow exponential decay (Figure~\ref{fig:poly_decay}, left), both Gaussian Sk
 n the fast polynomial decay scenario (Figure~\ref{fig:poly_decay}, right), Gaussian Sketching consistently outperforms BSRHT across all ranks and embedding dimensions. The relative errors for Gaussian Sketching decrease significantly as the rank increases, particularly for $l = 100$ and $l = 300$. In contrast, BSRHT shows a slower reduction in error, and its performance plateaus at higher ranks.
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.975\textwidth]{poly_decay_stability_custom.png}
+\includegraphics[width=0.95\textwidth]{poly_decay_stability_custom.png}
 \caption{Relative error as a function of approximation-rank for different values of sketching dimension $l$ and both sketching methods. Dataset is taken as polynomial (a) slowly-decaying and (b) fastly-decaying singular values.}
 \label{fig:poly_decay}
 \end{figure}
@@ -300,7 +297,7 @@ The two methods exhibit almost identical behavior, with a minor difference at lo
 
 	\noindent
 	[3] J. A. Tropp, A. Yurtsever, M. Udell, and V. Cevher, ‘Fixed-Rank Approximation of a Positive-Semidefinite Matrix from Streaming Data’.
-	
+
 	\noindent
 	[4] ‘Fast Walsh–Hadamard transform - Wikiwand’. Accessed: Nov. 10, 2024. [Online]. Available: \url{https://www.wikiwand.com/en/articles/Fast%20Walsh%E2%80%93Hadamard%20transform}
 	
