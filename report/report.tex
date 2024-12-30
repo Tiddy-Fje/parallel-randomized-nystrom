@@ -17,7 +17,7 @@
 	In this project, we study the randomized Nystr\"om approximation algorithm for low-rank approximation of a positive-semidefinite matrix $A \in \mathbb{R}^{n \times n}$. There are several important applications for this theory, such as image processing, PCA, or solving integral equations. However, the most common practical setting are kernel methods for large-scale machine-learning problems. Since these algorithms scale at least quadratic in the number of data points, low-rank approximations are essential to obtain reasonable storage usage and computational costs.
 	
 	Our goal is to efficiently parallelize this algorithm and investigate numerical stability and scalability (in terms of runtime).
-	\section{Randomized Nystr\"om Low Rank Approximation}
+	\section{Randomized Nystr\"om Low Rank Approximation}\label{sec:nystrom-theory}
 	The goal of the Randomized Nystr\"om algorithm is to represent a given matrix $A \in \mathbb{R}^{n \times n}$ by some lower rank $k<n$ approximation. The starting point of the algorithm is a rank-$\ell$ approximation of $A$, in the form
 	\[
 	A_{Nyst} := (A\Omega)(\Omega^T A \Omega)^{\dagger}(\Omega^T A) \in \mathbb{R}^{n \times n},
@@ -174,7 +174,7 @@
 	\end{equation}
 	ensuring accurate approximations with high probability. For BSRHT, the embedding dimension is of order:
 	\begin{equation}
-	l = \mathcal{O}\left(\epsilon^{-2}\left(n + \ln \frac{n}{\delta}\right)) \ln \frac{d}{\delta}\right),
+	l = \mathcal{O}\left(\epsilon^{-2}\left(n + \ln \frac{n}{\delta}\right) \ln \frac{n}{\delta}\right),
 	\end{equation}
 	making it scalable and efficient in distributed environments.
 	
@@ -183,18 +183,13 @@
 	\|A - A_{\text{approx}}\|_* \leq (1 + \epsilon) \|A - [[A]]_d\|_*,
 	\end{equation}
 	where $[[A]]_d$ is the optimal rank-$d$ approximation of $A$.
-
+	% CHECK WHY d IS THERE
 	\paragraph{Slow Exponential Decay:}
-
 The results (Figure~\ref{fig:slow_fast_exp_decay}, left) show that Gaussian outperforms BSRHT Sketching for all ranks when $l$ is small (e.g., $l = 15$ or $l = 20$). 
-As $l$ increases for example $l=170$ , we run into a problem :Tara fills . 
-
-
+As $l$ increases past a certain point, for example $l=170$, stability is completely lost. This is actually because for these values of $l$ the sketching matrix is not full rank, and the alternative described in \ref{sec:nystrom-theory} for this case did not work when implemented as is. Indeed, due to numerical errors on the computation of $B$ and its eigenvalue decomposition, some of the eigenvalues were found to be negative (and therefore causing a problem under the square root). We tried fixing this by (among other things) setting the negative eigenvalues to zero, but this did not work. 
 \paragraph{Fast Exponential Decay:}
 For fast decaying spectra (Figure~\ref{fig:slow_fast_exp_decay}, right), Gaussian Sketching dominates at all ranks and embedding dimensions, showing superior accuracy. 
-However, both Gaussian Sketching and BSRHT at $l=37$ display unexpected behavior, 
-where the relative error does not decrease smoothly as expected for larger embedding 
-
+However, both Gaussian Sketching and BSRHT at $l=37$ display the same problem as in the slow exponential decay case (since the matrix is not full rank).
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{exp_decay_stability_custom.png}
