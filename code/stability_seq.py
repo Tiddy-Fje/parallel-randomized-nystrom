@@ -60,34 +60,66 @@ def generate_plots(A, n, ls, ks, methods, method_names, dataset_name, ax=None):
 if __name__ == "__main__":
     n = 2 ** 10
     r = 20
-   
-    methods = [sequential_gaussian_sketch,block_SRHT_bis]
-    method_names = ["Gaussian", "BSRHT"]
-  
+
+    # Define methods and method names
+    methods_gaussian = [sequential_gaussian_sketch]
+    methods_bsrht = [block_SRHT_bis]
+    method_names_gaussian = ["Gaussian"]
+    method_names_bsrht = ["BSRHT"]
+
+    # Exponential Decay
     A_exp_fast = synthetic_matrix(n, r, "fast", "exponential")
     A_exp_slow = synthetic_matrix(n, r, "slow", "exponential")
-    ls_exp_fast = [20, 30, 35, 36]
-    ls_exp_slow = [30, 70, 161, 162]
-    ks_exp_fast = np.arange( 1, 40, 2 ).astype(int) 
-    ks_exp_slow = np.concatenate( (np.linspace( 1, r+15, 10).astype(int),np.linspace( r+15, r+80, 10+1).astype(int)[1:] ) )
 
-    print(f"Processing Exp dataset...")
+    # BSRHT-specific parameters for exponential decay
+    ls_exp_fast_bsrht = [15,20,25, 37]
+    ls_exp_slow_bsrht = [15,20,25,170]
+
+    # Gaussian-specific parameters for exponential decay
+    ls_exp_fast_gaussian = [20, 25, 37]
+    ls_exp_slow_gaussian = [30, 70, 75, 160,170]
+
+    ks_exp_fast = np.arange(1, 40, 2).astype(int)
+    ks_exp_slow = np.concatenate(
+        (np.linspace(1, r + 15, 10).astype(int),
+         np.linspace(r + 15, r + 80, 10 + 1).astype(int)[1:])
+    )
+
+    # Plot Slow Exponential Decay
     fig, ax = plt.subplots(1, 2, figsize=(14, 5.5))
-    generate_plots(A_exp_slow, A_exp_slow.shape[0], ls_exp_slow, ks_exp_slow, methods, method_names, 'Slow Exp. Decay', ax=ax[0])  
-    generate_plots(A_exp_fast, A_exp_fast.shape[0], ls_exp_fast, ks_exp_fast, methods, method_names, 'Fast Exp. Decay', ax=ax[1])
-    plt.savefig(f"../figures/exp_decay_stability.png")
+    generate_plots(A_exp_slow, A_exp_slow.shape[0], ls_exp_slow_gaussian, ks_exp_slow, 
+                   methods_gaussian, method_names_gaussian, 'Slow Exp. Decay (Gaussian)', ax=ax[0])
+    generate_plots(A_exp_slow, A_exp_slow.shape[0], ls_exp_slow_bsrht, ks_exp_slow, 
+                   methods_bsrht, method_names_bsrht, 'Slow Exp. Decay (BSRHT)', ax=ax[0])
 
+    # Plot Fast Exponential Decay
+    generate_plots(A_exp_fast, A_exp_fast.shape[0], ls_exp_fast_gaussian, ks_exp_fast, 
+                   methods_gaussian, method_names_gaussian, 'Fast Exp. Decay (Gaussian)', ax=ax[1])
+    generate_plots(A_exp_fast, A_exp_fast.shape[0], ls_exp_fast_bsrht, ks_exp_fast, 
+                   methods_bsrht, method_names_bsrht, 'Fast Exp. Decay (BSRHT)', ax=ax[1])
+
+    plt.tight_layout()
+    plt.savefig(f"../figures/exp_decay_stability_custom.png")
+
+    # Polynomial Decay
     A_poly_fast = synthetic_matrix(n, r, "fast", "polynomial")
     A_poly_slow = synthetic_matrix(n, r, "slow", "polynomial")
     ls_poly = [30, 100, 300]
-    ks_poly =  np.concatenate( (np.linspace( 1, r+15, 10).astype(int),np.linspace( r+15, r+150, 10+1).astype(int)[1:] ) )
+    ks_poly = np.concatenate(
+        (np.linspace(1, r + 15, 10).astype(int),
+         np.linspace(r + 15, r + 150, 10 + 1).astype(int)[1:])
+    )
 
-    print(f"Processing Poly dataset...")
     fig, ax = plt.subplots(1, 2, figsize=(14, 5.5))
-    generate_plots(A_poly_slow, A_poly_slow.shape[0], ls_poly, ks_poly, methods, method_names, 'Slow Poly. Decay', ax=ax[0])  
-    generate_plots(A_poly_fast, A_poly_fast.shape[0], ls_poly, ks_poly, methods, method_names, 'Fast Poly. Decay', ax=ax[1]) 
-    plt.savefig(f"../figures/poly_decay_stability.png")
-    
-    print(f"Processing MNIST dataset...")
+    generate_plots(A_poly_slow, A_poly_slow.shape[0], ls_poly, ks_poly, methods_gaussian + methods_bsrht,
+                   method_names_gaussian + method_names_bsrht, 'Slow Poly. Decay', ax=ax[0])
+    generate_plots(A_poly_fast, A_poly_fast.shape[0], ls_poly, ks_poly, methods_gaussian + methods_bsrht,
+                   method_names_gaussian + method_names_bsrht, 'Fast Poly. Decay', ax=ax[1])
+
+    plt.tight_layout()
+    plt.savefig(f"../figures/poly_decay_stability_custom.png")
+
+    # MNIST Dataset
     A_mnist = MNIST_matrix(n)
-    generate_plots(A_mnist, A_mnist.shape[0], ls_poly, ks_poly, methods, method_names, 'MNIST')      
+    generate_plots(A_mnist, A_mnist.shape[0], ls_poly, ks_poly, methods_gaussian + methods_bsrht,
+                   method_names_gaussian + method_names_bsrht, 'MNIST')
