@@ -12,8 +12,6 @@ def fwht_mat(A, copy=False): # adapted from wikipedia page with help of GPT
         A = np.copy(A)
     while h < m1:
         for i in range(0, m1, h * 2):
-            # Save a copy of the upper rows
-            # Perform addition for the upper rows
             A[i:i+h, :], A[i+h:i+2*h, :] = A[i:i+h, :] + A[i+h:i+2*h, :], A[i:i+h, :] - A[i+h:i+2*h, :]
             # this is done to skip the loop (2-3x faster)
         h *= 2

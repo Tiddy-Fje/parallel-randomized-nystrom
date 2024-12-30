@@ -1,5 +1,4 @@
 \documentclass[a4paper, 12pt,oneside]{article} 
-%\documentclass[a4paper, 12pt,oneside,draft]{article} 
 \usepackage{preamble_bis}
 %--------------------- ACTUAL FILE ---------------------- %
 \begin{document} 
@@ -15,10 +14,10 @@
 	\setcounter{page}{1}
 
 	\section{Introduction}
-	In this project, we study the randomized Nystr\"om approximation algorithm for the low-rank approximation of a positive-semidefinite matrix $A \in \mathbb{R}^{n \times n}$. There are several important applications for this theory, such as image processing, PCA, or solving integral equations. However, the most common practical setting are kernel methods for large-scale machine-learning problems. Since these algorithms scale at least quadratic in the number of data points, low-rank approximations are essential to obtain reasonable storage usage and computational costs.
+	In this project, we study the randomized Nystr\"om approximation algorithm for low-rank approximation of a positive-semidefinite matrix $A \in \mathbb{R}^{n \times n}$. There are several important applications for this theory, such as image processing, PCA, or solving integral equations. However, the most common practical setting are kernel methods for large-scale machine-learning problems. Since these algorithms scale at least quadratic in the number of data points, low-rank approximations are essential to obtain reasonable storage usage and computational costs.
 	
-	Our goal is to efficiently parallelize this alogrithm. Key aspects of our investigations are numerical stability, scalability, performance (in terms of runtime), and the approximation of the leading $k$ singular values of $A$.
-	\section{Randomized Nystr\"om low rank approximation}
+	Our goal is to efficiently parallelize this algorithm and investigate numerical stability and scalability (in terms of runtime).
+	\section{Randomized Nystr\"om Low Rank Approximation}
 	The goal of the Randomized Nystr\"om algorithm is to represent a given matrix $A \in \mathbb{R}^{n \times n}$ by some lower rank $k<n$ approximation. The starting point of the algorithm is a rank-$\ell$ approximation of $A$, in the form
 	\[
 	A_{Nyst} := (A\Omega)(\Omega^T A \Omega)^{\dagger}(\Omega^T A) \in \mathbb{R}^{n \times n},
@@ -43,7 +42,7 @@
 	&\approx QR(VV^T)R^T Q^T = ZZ^T = A\Omega(L^T)^{-1}(L)^{-1}\Omega^T A^T \\
 	&= A\Omega(LL^T)^{-1}\Omega^T A = A\Omega(\Omega^T A \Omega)^{-1}\Omega^T A.
 	\end{align*}
-	However, here we have the inverse of $\Omega^T A \Omega$ instead of its pseudoinverse. Unfortunately, This means Algorithm \ref{alg:nystrom} fails in Step 2 if $\Omega^T A \Omega$ is numerically singular. In this case, as in [4], we replace $L$ by a square root of $B$ in SVD form. Specifically, we write $B = U_B \Sigma_B U_B^T$ (since $B$ is SPSD), and set $L = U_B \sqrt{\Sigma_B} U_B^T$. By construction, we have
+	However, here we have the inverse of $\Omega^T A \Omega$ instead of its pseudoinverse. Unfortunately, This means Algorithm \ref{alg:nystrom} fails in Step 2 if $\Omega^T A \Omega$ is numerically singular. In this case, as in [1], we replace $L$ by a square root of $B$ in SVD form. Specifically, we write $B = U_B \Sigma_B U_B^T$ (since $B$ is SPSD), and set $L = U_B \sqrt{\Sigma_B} U_B^T$. By construction, we have
 	\[
 	LL^T = U_B \sqrt{\Sigma_B} U_B^T (U_B \sqrt{\Sigma_B} U_B^T)^T = U_B \Sigma_B U_B^T = B.
 	\]
@@ -66,7 +65,7 @@
 	where $\varepsilon > 0$ is a small approximation error. However, achieving this exact preservation for all $x$ and $y$ is generally infeasible due to the reduced dimensionality $\ell$. Instead, $\Omega$ is typically regarded as a random matrix, ensuring that \cref{eq:1} holds with high probability $1 - \delta$, where $\delta < 1$.
 
 	In this project, we employ the following two types of sketching matrices.
-	\subsection{Gaussian sketching }
+	\subsection{Gaussian Sketching }
 	The Gaussian sketching matrix has entries of $\Omega$ drawn independently from a standard normal distribution.
 	%where $\Omega \in \mathbb{R}^{n \times \ell}$, and $\ell$ represents the reduced dimensionality of the sketch.
 	% this is not necessary, as we already defined Omega above
@@ -81,7 +80,7 @@
 	\[
 	(1 - \varepsilon) \|v\|_2^2 \leq \|\Omega v\|_2^2 \leq (1 + \varepsilon) \|v\|_2^2, \quad \forall v \in T.
 	\]
-	\subsection{Block SRHT (BSRHT) sketching}
+	\subsection{Block SRHT (BSRHT) Sketching}
 	BSRHT is a version of the Subsampled Randomized Hadamard Transform (SRHT) specifically designed for distributed architectures. For $n$ a power of two, the SRHT can be defined as $\Omega^T = \sqrt{n/ \ell} RHD$, where: $H \in \mathbb{R}^{n \times n}$ is the normalized Walsh-Hadamard matrix; $D \in \mathbb{R}^{n \times n}$ is a diagonal matrix with i.i.d. random variables $\sim \text{Uniform}(\pm 1)$; and $R \in \mathbb{R}^{\ell \times n}$ is a subset of $\ell$ randomly sampled rows from the $n \times n$ identity matrix. Now, for $P$ different processors, BSRHT can be constructed block-wise from the SRHT as:
 	\[
 	\Omega^T = \begin{pmatrix} \Omega_1^T \\
@@ -100,10 +99,9 @@
 	with: $H \in \mathbb{R}^{n/P \times \ell/P}$ being the normalized Walsh-Hadamard matrix; $D_{Li} \in \mathbb{R}^{n/P \times n/P}$, $D_{Ri} \in \mathbb{R}^{n/P \times n/P}$ being diagonal matrices with i.i.d. Rademacher entries $\pm 1$; and $R \in \mathbb{R}^{\ell \times n/P}$ being a uniform sampling matrix, sampling along the rows.
 
 	This structure is particularly suited for distributed computations, as it allows for parallelism while maintaining the theoretical properties of the SRHT.
-	% MISSING CHARACTERISATION OF PROPERTIES ?
 	\section{Parallelisation}
 	We parallelise the algorithm by distributing among the processors the computation of $A \Omega,\Omega^T A \Omega$, and all other matrix operations with complexities at least proportional to $n$. 
-	Since parallelisation of QR factorisation was the topic of the first project we included the relevant functions for it in the code folder. The parallelisation of matrix products was however implemented from scratch. It was done as described in algorithm \ref{alg:parallel-matrix-product}, by distributing matrices smartly among the processors. 
+	Since parallelisation of QR factorisation was the topic of the first project we included the relevant functions for it in the code folder and used them when needed. The parallelisation of matrix products was however implemented from scratch. It was done as described in algorithm \ref{alg:parallel-matrix-product}, by distributing matrices smartly among the processors. 
 	\begin{algorithm}[H]
 		\caption{Computes the matrix product of two matrices $D$ and $E$ in parallel.}\label{alg:parallel-matrix-product}
 		\begin{algorithmic}
@@ -145,7 +143,7 @@
 		\EndIf
 		\end{algorithmic}
 	\end{algorithm}
-	\section{Experimental procedure}
+	\section{Experimental Procedure}
 		The presented results were obtained by running our scripts on the Helvetios cluster and averaging over different runs to make results more robust and interpretable.
 		
 		In general, due to the BSRHT making use of the Hadamard transformation, $n$ was made vary as powers of $2$ only. In reality one can always zero-pad the data to ensure that the Hadamard transformation can be applied. This was however avoided for performance analysis since it would have introduced unnecessary variation in the measurements.  
@@ -164,7 +162,7 @@
 		\caption{Singular value decay of synthetic matrices (left) and the MNIST-based similarity matrix (right).}
 		\label{fig:singular_value_comparison}
 	\end{figure}
-	\subsection{Stability analysis}
+	\subsection{Stability Analysis}
 	This section evaluates the numerical performance and stability of Gaussian Sketching and Block Subsampled Randomized Hadamard Transform (BSRHT) for low-rank matrix approximations. The trace-relative error, defined as 
 
 	\begin{equation}
@@ -202,8 +200,8 @@ where the relative error does not decrease smoothly as expected for larger embed
 
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{exp_decay_stability_custom.png}
-\caption{}
+\includegraphics[width=0.975\textwidth]{exp_decay_stability_custom.png}
+\caption{Relative error as a function of approximation-rank for different values of sketching dimension $l$ and both sketching methods. Dataset is taken as exponential (a) slowly-decaying and (b) fastly-decaying singular values.}
 \label{fig:slow_fast_exp_decay}
 \end{figure}
 
@@ -214,8 +212,8 @@ For slow exponential decay (Figure~\ref{fig:poly_decay}, left), both Gaussian Sk
 n the fast polynomial decay scenario (Figure~\ref{fig:poly_decay}, right), Gaussian Sketching consistently outperforms BSRHT across all ranks and embedding dimensions. The relative errors for Gaussian Sketching decrease significantly as the rank increases, particularly for $l = 100$ and $l = 300$. In contrast, BSRHT shows a slower reduction in error, and its performance plateaus at higher ranks.
 \begin{figure}[H]
 \centering
-\includegraphics[width=0.8\textwidth]{poly_decay_stability_custom.png}
-\caption{}
+\includegraphics[width=0.975\textwidth]{poly_decay_stability_custom.png}
+\caption{Relative error as a function of approximation-rank for different values of sketching dimension $l$ and both sketching methods. Dataset is taken as polynomial (a) slowly-decaying and (b) fastly-decaying singular values.}
 \label{fig:poly_decay}
 \end{figure}
 \paragraph{MNIST}
@@ -223,16 +221,16 @@ The two methods exhibit almost identical behavior, with a minor difference at lo
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.45\textwidth]{MNIST_stability.png}
-\caption{}
+\caption{Relative error as a function of approximation-rank for different values of sketching dimension $l$ and both sketching methods. Dataset is taken as MNIST.}
 \label{fig:mnsit_decay}
 \end{figure}
-	\subsection{Performance analysis}
+	\subsection{Performance Analysis}
 		For these results to have some general relevance, we tried considering realistic values of $k$ and $l$. More specifically, $k$ was taken often around $n/20$, while $l$ was taken logaritmically spaced.
 	
 		When running in parallel, the number of processors was limited to values $P=2^{2s}$ with $s\in\mathbb{N}$. This was due to perfect square constraint of the parallelised matrix multiplication and the BSRHT's use of the Hadamard transform. The values of $P$ we choose were 1,4,16,64. 		
 		This also meant having to take $l\le n/64$ integer for the TSQR algorithm to not yield an error for $P=64$. We also recall that to see speed-up with TSQR we need the matrix to be tall-skinny. To have a good speed-up for a bigger $l$, while keeping numerical stability for ill-conditioned matrices another algo should be used.	
 
-		Another implementation detail that should be mentioned is that we coded ourselves the Fast Hadamard Transform (starting from the python script on Wikipedia[2]). This was done to avoid using the only version we found online, that was extremely slow.
+		Another implementation detail that should be mentioned is that we coded ourselves the Fast Hadamard Transform (starting from the python script on Wikipedia[2]). This was done to avoid using the only version we found online (from \texttt{simpy}), that was extremely slow. Details on the implementation can be found in the appendix \ref{apx:FWHT}.
 		\section{Algorithm Performance}
         \subsection{Sequential Performance}
 		To explore the sequential runtimes of the implemented algorithms, we decided to do two longitudinal studies : first varying $l$ for a selected value of $n$, and then varying $n$ for a selected $l$. The associated results are represented in \ref{fig:runtimes-l-n-variation}. 
@@ -275,23 +273,29 @@ The two methods exhibit almost identical behavior, with a minor difference at lo
 			For the large run the results are quite different. Communication is not an issue for the sketching part, meaning that quasi-linear speed-ups are observed for both methods. This means the parallelization is successful and scales well for big computations. We also observe initial speed-up for the $k$-rank approximation, though it is short-lived due to the computation still being quite small and due to that the matrix is not that tall-skinny (reducing the benefit in the QR decomposition). 
 	\section{Conclusion}
 	In this project, we studied the randomized Nystr\"om approximation algorithm for the low-rank approximation of a positive-semidefinite matrix $A \in \mathbb{R}^{n \times n}$. The goal was to efficiently parallelize this algorithm and investigate its numerical stability, scalability, performance (in terms of runtime), for both Gaussian and Block SRHT sketching methods and different decay patterns in $A$'s singular values. 
-
 	
-	The most important results were that Gaussian sketching is faster than BSRHT for small values of $l$ and that BSRHT scales better with $n$, while BSRHT scales much better with $l$ making it a must for information-dense data. The parallelization was successful and scaled well for big computations. 
+	The most important results for the performance side were that Gaussian sketching is faster than BSRHT for small values of $l$ and scales better with $n$, while BSRHT scales much better with $l$ making it a must for information-dense data. The parallelization was successful and scaled well for big computations. 
 	
-	In terms of stability, Gaussian sketching was found to be the most stable method, consistently outperforming BSRHT across various decay patterns. However, both methods showed irregular behavior at certain embedding dimensions, which affected their performance. 
+	In terms of stability, Gaussian sketching was found to be the most stable method, consistently outperforming BSRHT across various decay patterns for a fixed $l$. However, both methods showed irregular behaviors at certain embedding dimensions, which affected their performance. 
 	
-	Ultimately, choosing the method involves a trade-off between stability and scalability, where Gaussian sketching offers more stable results, and BSRHT provides better scalability with larger datasets
+	Ultimately, choosing the method involves a trade-off between the mentioned stability and scalability properties, and should be tailored to the task and data at hand.
 \newpage
-	\section{Appendix}
-	\subsection{Fast Walsh-Hadamard Transform}
-	The optimized implementation of the Fast Walsh-Hadamard Transform (FWHT) presented here outperforms the SciPy version due to its focus on in-place computations and vectorized operations. Unlike the SciPy implementation, which often creates intermediate arrays and does not fully exploit in-place updates, this method minimizes memory usage by directly modifying the input matrix. This approach not only reduces overhead but also ensures better cache locality. Additionally, by processing blocks of rows iteratively and avoiding element-wise loops, the implementation leverages NumPy's highly optimized array operations, leading to a significant speedup (2-3x or more). 
-
- \subsection*{Amal}
-	ChatGPT was used to refine the English, generate code for the plots. Additionally, ChatGPT provided comments throughout the report and to the code to enhance readability.
-	\subsection*{Tara}
+	\section*{Appendix}
+	\subsection*{Fast Walsh-Hadamard Transform}\label{apx:FWHT}
+	We optimized the mentioned implementation of the FWHT in three ways. 
+	
+	Firstly, we removed the inner loop by operating on \texttt{i:i+h} directly. Then we removed copies of intermediate values by doing in-place computations. Finally, we adapted the function for it to act on matrices directly instead of a list of vectors (effectively replacing a \texttt{python} loop over the columns of $A$ with a \texttt{numpy} one).
+	
+	When analysing the resulting speed-up, we found it to be of around 3 (and therefore of around 30 compared to the \texttt{simpy} implementation). 
+	\section*{Acknowledgements}
+		\paragraph{Amal}
+		ChatGPT was used to refine the English, generate code for the plots. Additionally, ChatGPT provided comments throughout the report and to the code to enhance readability.
+		\paragraph{Tara}
 		I personally use Github Copilot for coding purposes, as it can gain me some time by auto-completing lines. I however never keep lines I don't understand or find not relevant. I also sometimes used Chat GPT to brainstorm topics related to the debugging of the code.	
 	\section*{References}
+	[1] L. Grigori, ‘Randomized algorithms for low rank matrix approximation’.
+
+	\noindent
 	[1] ‘Algorithms’. Accessed: Dec. 26, 2024. [Online]. Available: \url{https://www.overleaf.com/learn/latex/Algorithms}
 
 	\noindent
@@ -300,9 +304,5 @@ The two methods exhibit almost identical behavior, with a minor difference at lo
 	\noindent
 	[3] J. A. Tropp, A. Yurtsever, M. Udell, and V. Cevher, ‘Fixed-Rank Approximation of a Positive-Semidefinite Matrix from Streaming Data’.
 	
-	\noindent
-	[4] L. Grigori, ‘Randomized algorithms for low rank matrix approximation’.
-	%\appendix
-	%	\section{Runtime Estimation}\label{appendix:runtime_estimation}
 %%%
 \end{document} 
