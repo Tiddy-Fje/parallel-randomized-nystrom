@@ -189,10 +189,13 @@
 		\end{equation}
 		where $[[A]]_d$ is the optimal rank-$d$ approximation of $A$.
 		\paragraph{Slow Exponential Decay:}
-The results (Figure~\ref{fig:slow_fast_exp_decay}, left) show that BSRHT outperforms Gaussian Sketching for all ranks when $l$ is small (e.g., $l = 15$ or $l = 20$). As $l$ increases, Gaussian Sketching catches up and slightly surpasses BSRHT at higher ranks ($k > 80$). This demonstrates that BSRHT is more stable and effective with lower embedding dimensions but gradually loses its advantage as $l$ grows.
+The results (Figure~\ref{fig:slow_fast_exp_decay}, left) show that Gaussian outperforms BSRHT Sketching for all ranks when $l$ is small (e.g., $l = 15$ or $l = 20$). 
+As $l$ increases, we run into a problem :Tara fills . 
+
 
 \paragraph{Fast Exponential Decay:}
-For fast decaying spectra (Figure~\ref{fig:slow_fast_exp_decay}, right), Gaussian Sketching dominates at all ranks and embedding dimensions. While BSRHT's relative error reduces at higher ranks, it struggles to match Gaussian Sketching’s superior accuracy. This behavior highlights BSRHT's limitations in scenarios with rapid spectral decay.
+For fast decaying spectra (Figure~\ref{fig:slow_fast_exp_decay}, right), Gaussian Sketching dominates at all ranks and embedding dimensions, showing superior accuracy. However, both Gaussian Sketching and BSRHT at $l=162$ display unexpected behavior, where the relative error does not decrease smoothly as expected for larger embedding 
+
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{exp_decay_stability_custom.png}
@@ -200,10 +203,12 @@ For fast decaying spectra (Figure~\ref{fig:slow_fast_exp_decay}, right), Gaussia
     \label{fig:slow_fast_exp_decay}
 \end{figure}
 \paragraph{Slow Polynomial Decay:} 
-For slow polynomial decay (Figure~\ref{fig:poly_decay}, left), Gaussian Sketching and BSRHT exhibit similar trends at higher embedding dimensions ($l = 100, 300$), where both achieve smooth and consistent error reductions. However, at smaller embedding dimensions ($l = 30$), BSRHT shows slightly higher relative errors at lower ranks compared to Gaussian Sketching. 
+For slow exponential decay (Figure~\ref{fig:slow_fast_exp_decay}, left), Gaussian Sketching and BSRHT exhibit similar trends, but both methods show irregular behavior at larger embedding dimensions. 
+Specifically, at $l=170$, both methods fail to consistently reduce their relative error at higher ranks
 
 \paragraph{Fast Polynomial Decay:} 
-In the fast polynomial decay scenario (Figure~\ref{fig:poly_decay}, right), Gaussian Sketching consistently outperforms BSRHT across all ranks and embedding dimensions. The relative errors for Gaussian Sketching decrease significantly as the rank increases, particularly for $l = 100$ and $l = 300$. In contrast, BSRHT shows a slower reduction in error, and its performance plateaus at higher ranks.
+For fast decaying spectra (Figure~\ref{fig:slow_fast_exp_decay}, right), Gaussian Sketching outperforms BSRHT at all ranks and embedding dimensions.
+ However, at $l=37$, both Gaussian Sketching and BSRHT show irregular behavior
 \begin{figure}[h]
     \centering
     \includegraphics[width=0.8\textwidth]{poly_decay_stability_custom.png}
@@ -211,8 +216,7 @@ In the fast polynomial decay scenario (Figure~\ref{fig:poly_decay}, right), Gaus
     \label{fig:poly_decay}
 \end{figure}
 \paragraph{MNIST}
-For small embedding dimensions ($l = 30$), Gaussian Sketching and BSRHT exhibit similar performance, with BSRHT slightly outperforming Gaussian Sketching at lower ranks.
- However, Gaussian Sketching gains a marginal edge at higher ranks. As embedding dimensions increase ($l = 100$ and $l = 300$),the two methods perform almost the same, see Figure~\ref{fig:mnsit_decay}.
+The two methods exhibit almost identical behavior, with a minor difference at lower ranks, which completely disappears as the rank increases, as shown in Figure ~\ref{fig:mnsit_decay}.
  \begin{figure}[h]
     \centering
     \includegraphics[width=0.45\textwidth]{MNIST_stability.png}
@@ -269,9 +273,13 @@ For small embedding dimensions ($l = 30$), Gaussian Sketching and BSRHT exhibit 
 	\section{Conclusion}
 	In this project, we studied the randomized Nystr\"om approximation algorithm for the low-rank approximation of a positive-semidefinite matrix $A \in \mathbb{R}^{n \times n}$. The goal was to efficiently parallelize this algorithm and investigate its numerical stability, scalability, performance (in terms of runtime), for both Gaussian and Block SRHT sketching methods and different decay patterns in $A$'s singular values. 
 
+	
 	The most important results were that Gaussian sketching is faster than BSRHT for small values of $l$ and that BSRHT scales better with $n$, while BSRHT scales much better with $l$ making it a must for information-dense data. The parallelization was successful and scaled well for big computations. 
 	
-	[ADD A COUPLE TAKE-HOME POINTS ABOUT STABILITY PART ]
+	In terms of stability, Gaussian sketching was found to be the most stable method, consistently outperforming BSRHT across various decay patterns. However, both methods showed irregular behavior at certain embedding dimensions, which affected their performance. 
+	
+	Ultimately, choosing the method involves a trade-off between stability and scalability, where Gaussian sketching offers more stable results, and BSRHT provides better scalability with larger datasets
+\newpage
 	\section{Appendix}
 	\subsection{Fast Walsh-Hadamard Transform}
 	The optimized implementation of the Fast Walsh-Hadamard Transform (FWHT) presented here outperforms the SciPy version due to its focus on in-place computations and vectorized operations. Unlike the SciPy implementation, which often creates intermediate arrays and does not fully exploit in-place updates, this method minimizes memory usage by directly modifying the input matrix. This approach not only reduces overhead but also ensures better cache locality. Additionally, by processing blocks of rows iteratively and avoiding element-wise loops, the implementation leverages NumPy's highly optimized array operations, leading to a significant speedup (2-3x or more). 
