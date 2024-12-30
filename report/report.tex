@@ -198,10 +198,10 @@ However, both Gaussian Sketching and BSRHT at $l=37$ display the same problem as
 \end{figure}
 
 \paragraph{Slow Polynomial Decay:} 
-For slow exponential decay (Figure~\ref{fig:poly_decay}, left), both Gaussian Sketching and BSRHT exhibit similar trends, with Gaussian Sketching showing slightly better performance. However, as \( l \) increases, their performance becomes nearly identical.
+For slow polynomial decay (Figure~\ref{fig:poly_decay}, left), both Gaussian sketching and BSRHT exhibit similar trends, with Gaussian sketching showing slightly better performance. However, as \( l \) increases, their performance becomes nearly identical.
 
 \paragraph{Fast Polynomial Decay:} 
-n the fast polynomial decay scenario (Figure~\ref{fig:poly_decay}, right), Gaussian Sketching consistently outperforms BSRHT across all ranks and embedding dimensions. The relative errors for Gaussian Sketching decrease significantly as the rank increases, particularly for $l = 100$ and $l = 300$. In contrast, BSRHT shows a slower reduction in error, and its performance plateaus at higher ranks.
+In the fast polynomial decay scenario (Figure~\ref{fig:poly_decay}, right), Gaussian sketching consistently outperforms BSRHT across all ranks and embedding dimensions. The relative errors for Gaussian Sketching decrease significantly as the rank increases, particularly for $l = 100$ and $l = 300$. BSRHT shows a slightly slower reduction in error and performance plateaus faster.
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{poly_decay_stability_custom.png}
@@ -222,7 +222,7 @@ The two methods exhibit almost identical behavior, with a minor difference at lo
 		When running in parallel, the number of processors was limited to values $P=2^{2s}$ with $s\in\mathbb{N}$. This was due to perfect square constraint of the parallelised matrix multiplication and the BSRHT's use of the Hadamard transform. The values of $P$ we choose were 1,4,16,64. 		
 		This also meant having to take $l\le n/64$ integer for the TSQR algorithm to not yield an error for $P=64$. We also recall that to see speed-up with TSQR we need the matrix to be tall-skinny. To have a good speed-up for a bigger $l$, while keeping numerical stability for ill-conditioned matrices another algo should be used.	
 
-		Another implementation detail that should be mentioned is that we coded ourselves the Fast Hadamard Transform (starting from the python script on Wikipedia[4]). This was done to avoid using the only version we found online (from \texttt{simpy}), that was extremely slow. Details on the implementation can be found in the appendix \ref{apx:FWHT}.
+		Another implementation detail that should be mentioned is that we coded ourselves the FWHT (starting from the \texttt{python} script found on Wikipedia [4]). This was done to avoid using the only version we found online (from \texttt{simpy}), that was extremely slow. Details on the implementation can be found in the appendix \ref{apx:FWHT}.
 		\section{Algorithm Performance}
         \subsection{Sequential Performance}
 		To explore the sequential runtimes of the implemented algorithms, we decided to do two longitudinal studies : first varying $l$ for a selected value of $n$, and then varying $n$ for a selected $l$. The associated results are represented in \ref{fig:runtimes-l-n-variation}. 
@@ -235,7 +235,7 @@ The two methods exhibit almost identical behavior, with a minor difference at lo
 			\centering             
 				\vspace{0em}
 				\includegraphics[width=.975\textwidth]{runtimes_l_n_variation}
-				\caption{Runtimes associated to the tested sketching methods : as a function of $l$ (left) and as a function of $n$ (right). Runtimes are broken down in that associated to the computation of $A\Omega,\Omega^T A\Omega$ and that associated to the computation of the $k$ rank approximation.}
+				\caption{Runtimes associated to the tested sketching methods : as a function of $l$ (left) and as a function of $n$ (right). Runtimes are broken down in that associated to the computation of $A\Omega,\Omega^T A\Omega$ and that associated to the computation of the rest of the $k$ rank approximation.}
 				\label{fig:runtimes-l-n-variation}
 		\end{figure}
 		\paragraph{$l$ variation}
@@ -253,7 +253,7 @@ The two methods exhibit almost identical behavior, with a minor difference at lo
 				\centering             
 					\vspace{0em}
 					\includegraphics[width=.975\textwidth]{runtimes_cores_variation}
-					\caption{Runtimes associated to the tested sketching methods as a function of the number of cores : for a ``small'' example (left) and a ``large'' one (right). Runtimes are broken down in that associated to the computation of $A\Omega,\Omega^T A\Omega$ and that associated to the computation of the $k$ rank approximation.}
+					\caption{Runtimes associated to the tested sketching methods as a function of the number of cores : for a ``small'' example (left) and a ``large'' one (right). Runtimes are broken down in that associated to the computation of $A\Omega,\Omega^T A\Omega$ and that associated to the computation of the rest of the $k$ rank approximation.}
 					\label{fig:runtimes-cores-variation}
 			\end{figure}
 			%\paragraph{Small run}
