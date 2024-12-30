@@ -182,9 +182,6 @@
 	\label{fig:expdecay}
 	\end{figure}
 	For the MNIST dataset, illustrated in Figure~\ref{fig:mnist}, both sketching methods display steady improvements in relative error as \(k\) increases. Gaussian Sketch achieves slightly lower errors for smaller \(k\), making it advantageous in settings with limited computational resources. However, as \(k\) grows, the performance of the two methods converges, highlighting the robustness of the Block SRHT approach. 
-	% ARE WE SURE THIS IS NOT JUST BECAUSE L IS TOO SMALL ?
-	% SHOULD WE MABE TAKE A RANK (BEFORE DECAY) THAT IS SMALLER THAN L ?  -> BECAUSE OTHERWISE EMBEDDING TASK IS TOO HARD, NO ?
-	% I DON'T UNDERSTAND THE FOLLOWING : THE GAUSSIAN ERRORS SEEM EXTREMELY SMOOTH TO ME, AREN'T THEY ?
 	Block SRHT maintains smoother error reduction trends across all \(k\) values, reflecting its superior numerical stability and consistency on this dataset.
 	\begin{figure}[H]
 	\centering
