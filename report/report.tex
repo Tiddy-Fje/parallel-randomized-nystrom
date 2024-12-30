@@ -155,7 +155,7 @@
 	For the datasets derived from MNIST, we normalize the data to have values in the range \([0, 1]\) and use a subset of \( n \) data points. A similarity matrix is then constructed using the radial basis function (RBF), defined as:
 	$A_{ij} = e^{-\|x_i - x_j\|^2 / c^2}$, where \( x_i \) and \( x_j \) are data samples, and \( c \) is a tunable parameter controlling the penalty for dissimilarity. This results in a symmetric, dense \( n \times n \) matrix, where \( c \) determines how rapidly similarity decreases with distance. 
 
-	We visualize the singular value decay of these datasets in \cref{fig:singular_value_comparison}, which highlights the differences between the decay patterns for the synthetic matrices and the RBF-based similarity matrices derived from MNIST.
+	We visualize the singular value decay of these datasets in Figure~\ref{fig:singular_value_comparison}, which highlights the differences between the decay patterns for the synthetic matrices and the RBF-based similarity matrices derived from MNIST.
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=0.45\textwidth]{synthetic_spectra.png}
@@ -165,41 +165,60 @@
 		\label{fig:singular_value_comparison}
 	\end{figure}
 		\subsection{Stability analysis}
+		This section evaluates the numerical performance and stability of Gaussian Sketching and Block Subsampled Randomized Hadamard Transform (BSRHT) for low-rank matrix approximations. The trace-relative error, defined as 
+
+		\begin{equation}
+		\frac{\|A - A_{\text{approx}}\|_*}{\|A\|_*},
+		\end{equation}
 		
-		In this section, we investigate how our algorithm performs from a numerical point of view. The metric we use to assess the quality of our results is the trace relative error, defined as
-	\[
-	\frac{\|A - A_{\text{Nyst}}\|_*}{\|A\|_*},
-	\]
-	where \(\|\cdot\|_*\) is the nuclear norm. Since the nuclear norm is the sum of the singular values, \(\|A\|_* = \sigma_1(A) + \cdots + \sigma_n(A)\), this value describes the ratio of the sum of the singular values corresponding to the approximation error of \(A_{\text{Nyst}, k}\) compared to the original matrix \(A\).
+		where $\|\cdot\|_*$ represents the nuclear norm, is used to quantify the quality of the approximations. Smaller trace-relative error values indicate higher approximation quality. Additionally, the alignment of numerical results with theoretical guarantees established by the Oblivious Subspace Embedding (OSE) property is examined.
+		
+		The theoretical framework ensures that both Gaussian Sketching and BSRHT satisfy the $(\epsilon, \delta, d)$ OSE property. For Gaussian Sketching, the embedding dimension $l$ is given by:
+		\begin{equation}
+		l = \mathcal{O}\left(\epsilon^{-2}(d + \ln \frac{1}{\delta})\right),
+		\end{equation}
+		ensuring accurate approximations for any target rank $d$ with high probability. For BSRHT, the embedding dimension is:
+		\begin{equation}
+		l = \mathcal{O}\left(\epsilon^{-2}(d + \ln \frac{n}{\delta}) \ln \frac{d}{\delta}\right),
+		\end{equation}
+		making it scalable and efficient in distributed environments.
+		
+		Both methods conform to the following error bound:
+		\begin{equation}
+		\|A - A_{\text{approx}}\|_* \leq (1 + \epsilon) \|A - [[A]]_d\|_*,
+		\end{equation}
+		where $[[A]]_d$ is the optimal rank-$d$ approximation of $A$.
+		\paragraph{Slow Exponential Decay:}
+The results (Figure~\ref{fig:slow_fast_exp_decay}, left) show that BSRHT outperforms Gaussian Sketching for all ranks when $l$ is small (e.g., $l = 15$ or $l = 20$). As $l$ increases, Gaussian Sketching catches up and slightly surpasses BSRHT at higher ranks ($k > 80$). This demonstrates that BSRHT is more stable and effective with lower embedding dimensions but gradually loses its advantage as $l$ grows.
 
-	If this value is low, we have a good low-rank approximation of \(A\).
+\paragraph{Fast Exponential Decay:}
+For fast decaying spectra (Figure~\ref{fig:slow_fast_exp_decay}, right), Gaussian Sketching dominates at all ranks and embedding dimensions. While BSRHT's relative error reduces at higher ranks, it struggles to match Gaussian Sketching’s superior accuracy. This behavior highlights BSRHT's limitations in scenarios with rapid spectral decay.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{exp_decay_stability_custom.png}
+    \caption{}
+    \label{fig:slow_fast_exp_decay}
+\end{figure}
+\paragraph{Slow Polynomial Decay:} 
+For slow polynomial decay (Figure~\ref{fig:poly_decay}, left), Gaussian Sketching and BSRHT exhibit similar trends at higher embedding dimensions ($l = 100, 300$), where both achieve smooth and consistent error reductions. However, at smaller embedding dimensions ($l = 30$), BSRHT shows slightly higher relative errors at lower ranks compared to Gaussian Sketching. 
 
-	The ExpDecay dataset highlights the differences in numerical stability between Gaussian Sketch and Block SRHT. As shown in Figure~\ref{fig:expdecay}, Gaussian Sketch demonstrates a sharp and consistent decrease in relative error as the approximation rank \(k\) increases. This indicates that Gaussian Sketch is particularly effective for datasets with rapidly decaying spectra. In contrast, Block SRHT shows a more gradual reduction in relative error, suggesting that its structured embedding approach may be less adaptive in scenarios dominated by exponential decay.
-	\begin{figure}[H]
-	\centering
-	\includegraphics[width=0.95\textwidth]{exp_decay_stability.png}
-	\caption{Numerical Stability Results for ExpDecay Dataset.}
-	\label{fig:expdecay}
-	\end{figure}
-	For the MNIST dataset, illustrated in Figure~\ref{fig:mnist}, both sketching methods display steady improvements in relative error as \(k\) increases. Gaussian Sketch achieves slightly lower errors for smaller \(k\), making it advantageous in settings with limited computational resources. However, as \(k\) grows, the performance of the two methods converges, highlighting the robustness of the Block SRHT approach. 
-	% ARE WE SURE THIS IS NOT JUST BECAUSE L IS TOO SMALL ?
-	% SHOULD WE MABE TAKE A RANK (BEFORE DECAY) THAT IS SMALLER THAN L ?  -> BECAUSE OTHERWISE EMBEDDING TASK IS TOO HARD, NO ?
-	% I DON'T UNDERSTAND THE FOLLOWING : THE GAUSSIAN ERRORS SEEM EXTREMELY SMOOTH TO ME, AREN'T THEY ?
-	Block SRHT maintains smoother error reduction trends across all \(k\) values, reflecting its superior numerical stability and consistency on this dataset.
-	\begin{figure}[H]
-	\centering
-	\includegraphics[width=0.55\textwidth]{MNIST_stability.png}
-	\caption{Numerical Stability Results for MNIST Dataset.}
-	\label{fig:mnist}
-	\end{figure}
-	The PolyDecay dataset, depicted in Figure~\ref{fig:polydecay}, emphasizes the strong performance of Gaussian Sketch for datasets with polynomial spectral decay. Gaussian Sketch shows a pronounced and rapid reduction in relative error as \(k\) increases, significantly surpassing Block SRHT at higher ranks. This result highlights the flexibility of Gaussian Sketch for datasets with slower-decaying eigenvalues. Meanwhile, Block SRHT demonstrates a steadier reduction in error, showcasing its robustness and reliability for consistent approximations.
-	\begin{figure}[H]
-	\centering
-	\includegraphics[width=0.95\textwidth]{poly_decay_stability.png}
-	\caption{Numerical Stability Results for PolyDecay Dataset.}
-	\label{fig:polydecay}
-	\end{figure}
-	Overall, these results suggest that Gaussian Sketch excels in numerical accuracy, particularly for datasets with rapidly or polynomially decaying spectra. However, Block SRHT offers smoother error reduction trends and exceptional robustness, making it a reliable choice for distributed and large-scale computations. Further analysis of their computational efficiency will follow in subsequent sections.
+\paragraph{Fast Polynomial Decay:} 
+In the fast polynomial decay scenario (Figure~\ref{fig:poly_decay}, right), Gaussian Sketching consistently outperforms BSRHT across all ranks and embedding dimensions. The relative errors for Gaussian Sketching decrease significantly as the rank increases, particularly for $l = 100$ and $l = 300$. In contrast, BSRHT shows a slower reduction in error, and its performance plateaus at higher ranks.
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{poly_decay_stability_custom.png}
+    \caption{}
+    \label{fig:poly_decay}
+\end{figure}
+\paragraph{MNIST}
+For small embedding dimensions ($l = 30$), Gaussian Sketching and BSRHT exhibit similar performance, with BSRHT slightly outperforming Gaussian Sketching at lower ranks.
+ However, Gaussian Sketching gains a marginal edge at higher ranks. As embedding dimensions increase ($l = 100$ and $l = 300$),the two methods perform almost the same, see Figure~\ref{fig:mnsit_decay}.
+ \begin{figure}[h]
+    \centering
+    \includegraphics[width=0.45\textwidth]{MNIST_stability.png}
+    \caption{}
+    \label{fig:mnsit_decay}
+\end{figure}
 	\subsection{Performance analysis}
 		For these results to have some general relevance, we tried considering realistic values of $k$ and $l$. More specifically, $k$ was taken often around $n/20$, while $l$ was taken logaritmically spaced.
 	
@@ -253,10 +272,36 @@
 	The most important results were that Gaussian sketching is faster than BSRHT for small values of $l$ and that BSRHT scales better with $n$, while BSRHT scales much better with $l$ making it a must for information-dense data. The parallelization was successful and scaled well for big computations. 
 	
 	[ADD A COUPLE TAKE-HOME POINTS ABOUT STABILITY PART ]
-	\section*{Acknowledgements}
-	\subsection{Amal}
-	[TO FILL ...]
-	\subsection{Tara}
+	\section{Appendix}
+	\subsection{Fast Walsh-Hadamard Transform}
+	The optimized implementation of the Fast Walsh-Hadamard Transform (FWHT) presented here outperforms the SciPy version due to its focus on in-place computations and vectorized operations. Unlike the SciPy implementation, which often creates intermediate arrays and does not fully exploit in-place updates, this method minimizes memory usage by directly modifying the input matrix. This approach not only reduces overhead but also ensures better cache locality. Additionally, by processing blocks of rows iteratively and avoiding element-wise loops, the implementation leverages NumPy's highly optimized array operations, leading to a significant speedup (2-3x or more). 
+
+	begin{algorithm}
+	\caption{Fast Walsh-Hadamard Transform (FWHT)}
+	\begin{algorithmic}[1]
+	\STATE \textbf{Input:} Matrix $A$ of size $m \times n$, boolean flag $\text{copy}$
+	\STATE \textbf{Output:} Transformed matrix $A$
+	\STATE $h \gets 1$
+	\IF{$\text{copy}$}
+		\STATE $A \gets \text{copy of } A$
+	\ENDIF
+	\WHILE{$h < m$}
+		\FOR{$i = 0$ to $m - 1$ with step $2h$}
+			\STATE Perform batch updates:
+			\STATE $\quad A[i:i+h, :] \gets A[i:i+h, :] + A[i+h:i+2h, :]$
+			\STATE $\quad A[i+h:i+2h, :] \gets A[i:i+h, :] - 2 \cdot A[i+h:i+2h, :]$
+		\ENDFOR
+		\STATE $h \gets 2h$
+	\ENDWHILE
+	\IF{$\text{copy}$}
+		\RETURN $A$
+	\ENDIF
+	\end{algorithmic}
+	\end{algorithm}
+	\
+ \subsection*{Amal}
+	ChatGPT was used to refine the English, generate code for the plots. Additionally, ChatGPT provided comments throughout the report and to the code to enhance readability.
+	\subsection*{Tara}
 		I personally use Github Copilot for coding purposes, as it can gain me some time by auto-completing lines. I however never keep lines I don't understand or find not relevant. I also sometimes used Chat GPT to brainstorm topics related to the debugging of the code.	
 	\section*{References}
 	[1] ‘Algorithms’. Accessed: Dec. 26, 2024. [Online]. Available: \url{https://www.overleaf.com/learn/latex/Algorithms}
