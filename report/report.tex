@@ -103,7 +103,7 @@
 	We parallelise the algorithm by distributing among the processors the computation of $A \Omega,\Omega^T A \Omega$, and all other matrix operations with complexities at least proportional to $n$. 
 	Since parallelisation of QR factorisation was the topic of the first project we included the relevant functions for it in the code folder and used them when needed. The parallelisation of matrix products was however implemented from scratch. It was done as described in algorithm \ref{alg:parallel-matrix-product}, by distributing matrices smartly among the processors. 
 	\begin{algorithm}[H]
-		\caption{Computes the matrix product of two matrices $D$ and $E$ in parallel.}\label{alg:parallel-matrix-product}
+		\caption{Computes the matrix product of two matrices $D$ and $E$ in parallel. The syntax was adapted from an Overleaf example [2].}\label{alg:parallel-matrix-product}
 		\begin{algorithmic}
 		\Require $q=\sqrt{P}$ is an integer, $D\in\mathbb R^{m\times m}$  distributed such that rank $i$ has $D_{i//q,i\text{ mod }q}$ and $E\in\mathbb R^{m\times n}$ distributed such that rank $i$ has $E_{i//q}$. FullProd is true if we also want to compute $E^TDE$.
 		\Ensure $F=DE$ (and $G=E^TF$ too if FullProd is true). 
@@ -122,7 +122,7 @@
 	
 	The pseudo-code for the parallelisation of the randomized Nystr\"om algorithm is then described in algorithm \ref{alg:parallel-rand-nystrom}.
 	\begin{algorithm}[htb]
-		\caption{Randomized Nystr\"om algorithm. The syntax was adapted from an Overleaf example [1].}\label{alg:parallel-rand-nystrom}
+		\caption{Randomized Nystr\"om algorithm.}\label{alg:parallel-rand-nystrom}
 		\begin{algorithmic}
 		\Require $A$ is an $n\times n$ symmetric positive semidefinite matrix, $\Omega$ is a sketching matrix of size $n\times l$, and $k$ is the rank of the approximation
 		\Ensure $[A_{N y s t}]_k$, the rank-$k$ randomized Nystr\"om approximation of $A$. 
@@ -230,7 +230,7 @@ The two methods exhibit almost identical behavior, with a minor difference at lo
 		When running in parallel, the number of processors was limited to values $P=2^{2s}$ with $s\in\mathbb{N}$. This was due to perfect square constraint of the parallelised matrix multiplication and the BSRHT's use of the Hadamard transform. The values of $P$ we choose were 1,4,16,64. 		
 		This also meant having to take $l\le n/64$ integer for the TSQR algorithm to not yield an error for $P=64$. We also recall that to see speed-up with TSQR we need the matrix to be tall-skinny. To have a good speed-up for a bigger $l$, while keeping numerical stability for ill-conditioned matrices another algo should be used.	
 
-		Another implementation detail that should be mentioned is that we coded ourselves the Fast Hadamard Transform (starting from the python script on Wikipedia[2]). This was done to avoid using the only version we found online (from \texttt{simpy}), that was extremely slow. Details on the implementation can be found in the appendix \ref{apx:FWHT}.
+		Another implementation detail that should be mentioned is that we coded ourselves the Fast Hadamard Transform (starting from the python script on Wikipedia[4]). This was done to avoid using the only version we found online (from \texttt{simpy}), that was extremely slow. Details on the implementation can be found in the appendix \ref{apx:FWHT}.
 		\section{Algorithm Performance}
         \subsection{Sequential Performance}
 		To explore the sequential runtimes of the implemented algorithms, we decided to do two longitudinal studies : first varying $l$ for a selected value of $n$, and then varying $n$ for a selected $l$. The associated results are represented in \ref{fig:runtimes-l-n-variation}. 
@@ -296,13 +296,15 @@ The two methods exhibit almost identical behavior, with a minor difference at lo
 	[1] L. Grigori, ‘Randomized algorithms for low rank matrix approximation’.
 
 	\noindent
-	[1] ‘Algorithms’. Accessed: Dec. 26, 2024. [Online]. Available: \url{https://www.overleaf.com/learn/latex/Algorithms}
+	[2] ‘Algorithms’. Accessed: Dec. 26, 2024. [Online]. Available: \url{https://www.overleaf.com/learn/latex/Algorithms}
 
 	\noindent
-	[2] ‘Fast Walsh–Hadamard transform - Wikiwand’. Accessed: Nov. 10, 2024. [Online]. Available: \url{https://www.wikiwand.com/en/articles/Fast%20Walsh%E2%80%93Hadamard%20transform}
+	[3] J. A. Tropp, A. Yurtsever, M. Udell, and V. Cevher, ‘Fixed-Rank Approximation of a Positive-Semidefinite Matrix from Streaming Data’.
 	
 	\noindent
-	[3] J. A. Tropp, A. Yurtsever, M. Udell, and V. Cevher, ‘Fixed-Rank Approximation of a Positive-Semidefinite Matrix from Streaming Data’.
+	[4] ‘Fast Walsh–Hadamard transform - Wikiwand’. Accessed: Nov. 10, 2024. [Online]. Available: \url{https://www.wikiwand.com/en/articles/Fast%20Walsh%E2%80%93Hadamard%20transform}
+	
+
 	
 %%%
 \end{document} 
