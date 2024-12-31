@@ -162,61 +162,57 @@
 		\label{fig:singular_value_comparison}
 	\end{figure}
 	\subsection{Stability Analysis}
-	This section evaluates the numerical performance and stability of Gaussian and BSRHT sketching for low-rank matrix approximations. The trace-relative error, defined as 
-	\begin{equation}
-	\frac{\|A - A_{\text{approx}}\|_*}{\|A\|_*},
-	\end{equation}
-	where $\|\cdot\|_*$ represents the nuclear norm, is used to quantify the quality of the approximations. Smaller trace-relative error values indicate higher approximation quality. Additionally, the alignment of numerical results with theoretical guarantees established by the Oblivious Subspace Embedding (OSE) property is examined.
-	
-	The theoretical framework ensures that both Gaussian Sketching and BSRHT satisfy the $(\epsilon, \delta, n)$ OSE property. For Gaussian Sketching, the embedding dimension $l$ is of order :
-	\begin{equation}
-	l = \mathcal{O}\left(\epsilon^{-2}\left(n + \ln \frac{1}{\delta}\right)\right),
-	\end{equation}
-	ensuring accurate approximations with high probability. For BSRHT, the embedding dimension is of order:
-	\begin{equation}
-	l = \mathcal{O}\left(\epsilon^{-2}\left(n + \ln \frac{n}{\delta}\right) \ln \frac{n}{\delta}\right),
-	\end{equation}
-	making it scalable and efficient in distributed environments.
-	
-	Both methods conform to the following error bound:
-	\begin{equation}
-	\|A - A_{\text{approx}}\|_* \leq (1 + \epsilon) \|A - [[A]]_d\|_*,
-	\end{equation}
-	where $[[A]]_d$ is the optimal rank-$d$ approximation of $A$.
-	% CHECK WHY d IS THERE
-	\paragraph{Slow Exponential Decay:}
-The results (Figure~\ref{fig:slow_fast_exp_decay}, left) show that Gaussian outperforms BSRHT Sketching for all ranks when $l$ is small (e.g., $l = 15$ or $l = 20$). 
-As $l$ increases past a certain point, for example $l=170$, stability is completely lost. This is actually because for these values of $l$ the sketching matrix is not full rank, and the alternative described in \ref{sec:nystrom-theory} for this case did not work when implemented as is. Indeed, due to numerical errors on the computation of $B$ and its eigenvalue decomposition, some of the eigenvalues were found to be negative (and therefore causing a problem under the square root). We tried fixing this by (among other things) setting the negative eigenvalues to zero, but this did not work. 
+This section evaluates the numerical performance and stability of Gaussian Sketching and Block Subsampled Randomized Hadamard Transform (BSRHT) for low-rank matrix approximations. The trace-relative error, defined as 
+\begin{equation}
+\frac{\|A - A_{\text{approx}}\|_*}{\|A\|_*},
+\end{equation}
+where $\|\cdot\|_*$ represents the nuclear norm, is used to quantify the quality of the approximations. Smaller trace-relative error values indicate higher approximation quality. Additionally, we examine the alignment of numerical results with theoretical guarantees established by the Oblivious Subspace Embedding (OSE) property.
+
+The theoretical framework ensures that both Gaussian Sketching and BSRHT satisfy the $(\epsilon, \delta, n)$ OSE property, where \( n \) refers to the target rank of the approximation. For Gaussian Sketching, the embedding dimension \( l \) is given by:
+\begin{equation}
+l = \mathcal{O}\left(\epsilon^{-2}(n + \ln \frac{1}{\delta})\right),
+\end{equation}
+ensuring accurate approximations with high probability. For BSRHT, the embedding dimension is:
+\begin{equation}
+l = \mathcal{O}\left(\epsilon^{-2}(n + \ln \frac{n}{\delta}) \ln \frac{n}{\delta}\right),
+\end{equation}
+making it scalable and efficient in distributed environments.
+\paragraph{Slow Exponential Decay:}
+The results (Figure~\ref{fig:slow_fast_exp_decay}, left) show that Gaussian Sketching outperforms BSRHT Sketching for all ranks when \( l \) is small (e.g., \( l = 15 \) or \( l = 20 \)). However, as \( l \) increases beyond a certain point (e.g., \( l = 170 \)), stability is lost. This instability arises because, for these values of \( l \), the sketching matrix is not full rank. Numerical errors in computing \( B \) and its eigenvalue decomposition led to negative eigenvalues, causing issues when computing the square root.Attempts to address this issue by setting negative eigenvalues to zero were unsuccessful. Adding a regularization term delayed the problem but did not resolve it entirely.
+
 \paragraph{Fast Exponential Decay:}
-For fast decaying spectra (Figure~\ref{fig:slow_fast_exp_decay}, right), Gaussian Sketching dominates at all ranks and embedding dimensions, showing superior accuracy. 
-However, both Gaussian Sketching and BSRHT at $l=37$ display the same problem as in the slow exponential decay case (since the matrix is not full rank).
+For fast-decaying spectra (Figure~\ref{fig:slow_fast_exp_decay}, right), Gaussian Sketching consistently dominates across all ranks and embedding dimensions. However, both Gaussian Sketching and BSRHT at \( l = 37 \) exhibit the same instability as in the slow exponential decay case due to the sketching matrix not being full rank.
+
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{exp_decay_stability_custom.png}
-\caption{Relative error as a function of approximation-rank for different values of sketching dimension $l$ and both sketching methods. Dataset is taken as exponential (a) slowly-decaying and (b) fastly-decaying singular values.}
+\caption{Relative error as a function of approximation rank for different values of sketching dimension \( l \) and both sketching methods. Dataset consists of exponential (a) slow-decay and (b) fast-decay singular values.}
 \label{fig:slow_fast_exp_decay}
 \end{figure}
 
-\paragraph{Slow Polynomial Decay:} 
-For slow polynomial decay (Figure~\ref{fig:poly_decay}, left), both Gaussian sketching and BSRHT exhibit similar trends, with Gaussian sketching showing slightly better performance. However, as \( l \) increases, their performance becomes nearly identical.
+\paragraph{Slow Polynomial Decay:}
+For slow polynomial decay (Figure~\ref{fig:poly_decay}, left), Gaussian Sketching and BSRHT exhibit similar trends, with Gaussian Sketching showing slightly better performance. As \( l \) increases, their performance becomes nearly identical.
 
-\paragraph{Fast Polynomial Decay:} 
-In the fast polynomial decay scenario (Figure~\ref{fig:poly_decay}, right), Gaussian sketching consistently outperforms BSRHT across all ranks and embedding dimensions. The relative errors for Gaussian Sketching decrease significantly as the rank increases, particularly for $l = 100$ and $l = 300$. BSRHT shows a slightly slower reduction in error and performance plateaus faster.
+\paragraph{Fast Polynomial Decay:}
+In the fast polynomial decay scenario (Figure~\ref{fig:poly_decay}, right), Gaussian Sketching consistently outperforms BSRHT across all ranks and embedding dimensions. The relative errors for Gaussian Sketching decrease significantly as the rank increases, particularly for \( l = 100 \) and \( l = 300 \). In contrast, BSRHT shows a slower reduction in error, and its performance plateaus at higher ranks.
+
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\textwidth]{poly_decay_stability_custom.png}
-\caption{Relative error as a function of approximation-rank for different values of sketching dimension $l$ and both sketching methods. Dataset is taken as polynomial (a) slowly-decaying and (b) fastly-decaying singular values.}
+\caption{Relative error as a function of approximation rank for different values of sketching dimension \( l \) and both sketching methods. Dataset consists of polynomial (a) slow-decay and (b) fast-decay singular values.}
 \label{fig:poly_decay}
 \end{figure}
-\paragraph{MNIST}
-The two methods exhibit almost identical behavior, with a minor difference at lower ranks, which completely disappears as the rank increases, as shown in Figure ~\ref{fig:mnsit_decay}.
+
+\paragraph{MNIST:}
+The two methods exhibit almost identical behavior, with minor differences at lower ranks that completely disappear as the rank increases, as shown in Figure~\ref{fig:mnist_decay}.
+
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.45\textwidth]{MNIST_stability.png}
-\caption{Relative error as a function of approximation-rank for different values of sketching dimension $l$ and both sketching methods. Dataset is taken as MNIST.}
-\label{fig:mnsit_decay}
+\caption{Relative error as a function of approximation rank for different values of sketching dimension \( l \) and both sketching methods. Dataset consists of MNIST.}
+\label{fig:mnist_decay}
 \end{figure}
-	\subsection{Performance Analysis}
+\subsection{Performance Analysis}
 		For these results to have some general relevance, we tried considering realistic values of $k$ and $l$. More specifically, $k$ was taken often around $n/20$, while $l$ was taken logaritmically spaced.
 	
 		When running in parallel, the number of processors was limited to values $P=2^{2s}$ with $s\in\mathbb{N}$. This was due to perfect square constraint of the parallelised matrix multiplication and the BSRHT's use of the Hadamard transform. The values of $P$ we choose were 1,4,16,64. 		
@@ -249,10 +245,10 @@ The two methods exhibit almost identical behavior, with a minor difference at lo
         \subsection{Parallel Performance}
 			We now turn to the analysis of the parallel performance. The relevant plot for this section is \ref{fig:runtimes-cores-variation}. 
 			%For the sake of structure, we analyse separately the small and the large runs.
-			\begin{figure}[htb]       
+			\begin{figure}[htbp]       
 				\centering             
 					\vspace{0em}
-					\includegraphics[width=.975\textwidth]{runtimes_cores_variation}
+					\includegraphics[width=.8\textwidth]{runtimes_cores_variation}
 					\caption{Runtimes associated to the tested sketching methods as a function of the number of cores : for a ``small'' example (left) and a ``large'' one (right). Runtimes are broken down in that associated to the computation of $A\Omega,\Omega^T A\Omega$ and that associated to the computation of the rest of the $k$ rank approximation.}
 					\label{fig:runtimes-cores-variation}
 			\end{figure}
@@ -262,15 +258,23 @@ The two methods exhibit almost identical behavior, with a minor difference at lo
 			
 			For the specific parameter values selected, Gaussian sketching is a factor $\approx 10$ faster than BRSHT (except $P=64$).
 			%\paragraph{Large run}
-			For the large run the results are quite different. Communication is not an issue for the sketching part, meaning that quasi-linear speed-ups are observed for both methods. This means the parallelization is successful and scales well for big computations. We also observe initial speed-up for the $k$-rank approximation, though it is short-lived due to the computation still being quite small and due to that the matrix is not that tall-skinny (reducing the benefit in the QR decomposition). 
-	\section{Conclusion}
-	In this project, we studied the randomized Nystr\"om approximation algorithm for the low-rank approximation of a positive-semidefinite matrix $A \in \mathbb{R}^{n \times n}$. The goal was to efficiently parallelize this algorithm and investigate its numerical stability, scalability, performance (in terms of runtime), for both Gaussian and Block SRHT sketching methods and different decay patterns in $A$'s singular values. 
-	
-	The most important results for the performance side were that Gaussian sketching is faster than BSRHT for small values of $l$ and scales better with $n$, while BSRHT scales much better with $l$ making it a must for information-dense data. The parallelization was successful and scaled well for big computations. 
-	
-	In terms of stability, Gaussian sketching was found to be the most stable method, consistently outperforming BSRHT across various decay patterns for a fixed $l$. However, both methods showed irregular behaviors at certain embedding dimensions, which affected their performance. 
-	
-	Ultimately, choosing the method involves a trade-off between the mentioned stability and scalability properties, and should be tailored to the task and data at hand.
+			
+			For the large run the results are quite different. Communication is not an issue for the sketching part, meaning that quasi-linear speed-ups are observed for both methods. 
+			This means the parallelization is successful and scales well for big computations. 
+			We also observe initial speed-up for the $k$-rank approximation, though it is short-lived due to the computation still being quite small and due to that the matrix is not that tall-skinny 
+			(reducing the benefit in the QR decomposition).
+\section{Conclusion}
+\vspace{-0.5em} % Adjust vertical spacing if needed to fit the content
+\enlargethispage{\baselineskip} % Force the page to accommodate more lines
+
+In this project, we studied the randomized Nystr\"om approximation algorithm for the low-rank approximation of a positive-semidefinite matrix $A \in \mathbb{R}^{n \times n}$. The goal was to efficiently parallelize this algorithm and investigate its numerical stability, scalability, and performance (in terms of runtime), for both Gaussian and Block SRHT sketching methods and different decay patterns in $A$'s singular values.
+
+The most important results for the performance side were that Gaussian sketching is faster than BSRHT for small values of $l$ and scales better with $n$, while BSRHT scales much better with $l$, making it a must for information-dense data. The parallelization was successful and scaled well for big computations.
+
+In terms of stability, Gaussian sketching was found to be the most stable method, consistently outperforming BSRHT across various decay patterns for a fixed $l$. However, both methods showed irregular behaviors at certain embedding dimensions, which affected their performance.
+
+Ultimately, choosing the method involves a trade-off between the mentioned stability and scalability properties, and should be tailored to the task and data at hand.
+
 \newpage
 	\section*{Appendix}
 	\subsection*{Fast Walsh-Hadamard Transform}\label{apx:FWHT}
@@ -279,6 +283,30 @@ The two methods exhibit almost identical behavior, with a minor difference at lo
 	Firstly, we removed the inner loop by operating on \texttt{i:i+h} directly. Then we removed copies of intermediate values by doing in-place computations. Finally, we adapted the function for it to act on matrices directly instead of a list of vectors (effectively replacing a \texttt{python} loop over the columns of $A$ with a \texttt{numpy} one).
 	
 	When analysing the resulting speed-up, we found it to be of around 3 (and therefore of around 30 compared to the \texttt{simpy} implementation). 
+	\begin{algorithm}
+		\caption{Fast Walsh-Hadamard Transform (FWHT)}
+		\begin{algorithmic}[1]
+			\State \textbf{Input:} Matrix $A$ of size $m \times n$, boolean flag $\text{copy}$
+			\State \textbf{Output:} Transformed matrix $A$
+			\State $h \gets 1$
+			\If{$\text{copy}$}
+				\State $A \gets \text{copy of } A$
+			\EndIf
+			\While{$h < m$}
+				\For{$i = 0$ to $m - 1$ with step $2h$}
+					\State Perform batch updates:
+					\Statex \hspace{\algorithmicindent} $A[i:i+h, :] \gets A[i:i+h, :] + A[i+h:i+2h, :]$
+					\Statex \hspace{\algorithmicindent} $A[i+h:i+2h, :] \gets A[i:i+h, :] - 2 \cdot A[i+h:i+2h, :]$
+				\EndFor
+				\State $h \gets 2h$
+			\EndWhile
+			\If{$\text{copy}$}
+				\State \Return $A$
+			\EndIf
+		\end{algorithmic}
+	\end{algorithm}
+	
+	
 	\section*{Acknowledgements}
 		\paragraph{Amal}
 		ChatGPT was used to refine the English, generate code for the plots. Additionally, ChatGPT provided comments throughout the report and to the code to enhance readability.
@@ -295,6 +323,12 @@ The two methods exhibit almost identical behavior, with a minor difference at lo
 
 	\noindent
 	[4] ‘Fast Walsh–Hadamard transform - Wikiwand’. Accessed: Nov. 10, 2024. [Online]. Available: \url{https://www.wikiwand.com/en/articles/Fast%20Walsh%E2%80%93Hadamard%20transform}
+	
+	\noindent
+	[5] O. Balabanov, M. Beaupere, L. Grigori, and V. Lederer.
+	\newblock Block subsampled randomized hadamard transform for low-rank approximation on distributed architectures.
+	\newblock In \emph{ICML'23: Proceedings of the 40th International Conference on Machine Learning}, number 66, pages 1564--1576, 2023.
+	
 	
 
 	
