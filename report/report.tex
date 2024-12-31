@@ -243,69 +243,62 @@ The two methods exhibit almost identical behavior, with minor differences at low
 
 		As for the $k$-rank approximation runtimes, the linear increase as a function of $n$ is hard to see on the plot due to the different scale. 
         \subsection{Parallel Performance}
-			We now turn to the analysis of the parallel performance. The relevant plot for this section is \ref{fig:runtimes-cores-variation}. 
-			%For the sake of structure, we analyse separately the small and the large runs.
-			\begin{figure}[htbp]       
-				\centering             
-					\vspace{0em}
-					\includegraphics[width=.8\textwidth]{runtimes_cores_variation}
-					\caption{Runtimes associated to the tested sketching methods as a function of the number of cores : for a ``small'' example (left) and a ``large'' one (right). Runtimes are broken down in that associated to the computation of $A\Omega,\Omega^T A\Omega$ and that associated to the computation of the rest of the $k$ rank approximation.}
-					\label{fig:runtimes-cores-variation}
-			\end{figure}
-			%\paragraph{Small run}
-			For the small run we first observe that some speed-up is displayed as a function of number of cores for both sketching methods. The speed-up is quasi-linear for BRSHT, while it saturates and back-fires for Gaussian sketching, due to the communication overhead. Given that the $k$-rank approximation part of the computation is smaller, it is most affected by the cost of communication, which actually dominates all throughout the core-number sweep.   
-			These behaviours are expected given that : (a) the computation is rather small to be run in parallel; (b) BRSHT is slower than Gaussian sketching for small values of $l$. 
-			
-			For the specific parameter values selected, Gaussian sketching is a factor $\approx 10$ faster than BRSHT (except $P=64$).
-			%\paragraph{Large run}
-			
-			For the large run the results are quite different. Communication is not an issue for the sketching part, meaning that quasi-linear speed-ups are observed for both methods. 
-			This means the parallelization is successful and scales well for big computations. 
-			We also observe initial speed-up for the $k$-rank approximation, though it is short-lived due to the computation still being quite small and due to that the matrix is not that tall-skinny 
-			(reducing the benefit in the QR decomposition).
-\section{Conclusion}
-\vspace{-0.5em} % Adjust vertical spacing if needed to fit the content
-\enlargethispage{\baselineskip} % Force the page to accommodate more lines
+We now turn to the analysis of the parallel performance. The relevant plot for this section is \ref{fig:runtimes-cores-variation}. 
+\begin{figure}[htbp]
+    \centering
+    \vspace{0em}
+    \includegraphics[width=.975\textwidth]{runtimes_cores_variation}
+    \caption{Runtimes associated to the tested sketching methods as a function of the number of cores: for a ``small'' example (left) and a ``large'' one (right). Runtimes are broken down into those associated with the computation of $A\Omega,\Omega^T A\Omega$ and that associated with the computation of the rest of the $k$-rank approximation.}
+    \label{fig:runtimes-cores-variation}
+\end{figure}
 
-In this project, we studied the randomized Nystr\"om approximation algorithm for the low-rank approximation of a positive-semidefinite matrix $A \in \mathbb{R}^{n \times n}$. The goal was to efficiently parallelize this algorithm and investigate its numerical stability, scalability, and performance (in terms of runtime), for both Gaussian and Block SRHT sketching methods and different decay patterns in $A$'s singular values.
+For the small run, we first observe that some speed-up is displayed as a function of the number of cores for both sketching methods. The speed-up is quasi-linear for BRSHT, while it saturates and backfires for Gaussian sketching, due to the communication overhead. Given that the $k$-rank approximation part of the computation is smaller, it is most affected by the cost of communication, which dominates all throughout the core-number sweep. These behaviors are expected given that: (a) the computation is rather small to be run in parallel; (b) BRSHT is slower than Gaussian sketching for small values of $l$.
+
+For the specific parameter values selected, Gaussian sketching is a factor of $\approx 10$ faster than BRSHT (except for $P=64$).
+
+For the large run, the results are quite different. Communication is not an issue for the sketching part, meaning that quasi-linear speed-ups are observed for both methods. This means the parallelization is successful and scales well for big computations. We also observe initial speed-up for the $k$-rank approximation, though it is short-lived due to the computation still being quite small and the fact that the matrix is not that tall-skinny (reducing the benefit in the QR decomposition).
+
+\vspace{-0.5em} % Reduce vertical spacing before conclusion
+\section{Conclusion}
+In this project, we studied the randomized Nystr\"om approximation algorithm for the low-rank approximation of a positive-semidefinite matrix $A \in \mathbb{R}^{n \times n}$. The goal was to efficiently parallelize this algorithm and investigate its numerical stability, scalability, and performance (in terms of runtime) for both Gaussian and Block SRHT sketching methods and different decay patterns in $A$'s singular values.
 
 The most important results for the performance side were that Gaussian sketching is faster than BSRHT for small values of $l$ and scales better with $n$, while BSRHT scales much better with $l$, making it a must for information-dense data. The parallelization was successful and scaled well for big computations.
 
 In terms of stability, Gaussian sketching was found to be the most stable method, consistently outperforming BSRHT across various decay patterns for a fixed $l$. However, both methods showed irregular behaviors at certain embedding dimensions, which affected their performance.
 
-Ultimately, choosing the method involves a trade-off between the mentioned stability and scalability properties, and should be tailored to the task and data at hand.
+Ultimately, choosing the method involves a trade-off between the mentioned stability and scalability properties and should be tailored to the task and data at hand.
 
 \newpage
-	\section*{Appendix}
-	\subsection*{Fast Walsh-Hadamard Transform}\label{apx:FWHT}
-	We optimized the mentioned implementation of the FWHT in three ways. 
-	
-	Firstly, we removed the inner loop by operating on \texttt{i:i+h} directly. Then we removed copies of intermediate values by doing in-place computations. Finally, we adapted the function for it to act on matrices directly instead of a list of vectors (effectively replacing a \texttt{python} loop over the columns of $A$ with a \texttt{numpy} one).
-	
-	When analysing the resulting speed-up, we found it to be of around 3 (and therefore of around 30 compared to the \texttt{simpy} implementation). 
-	\begin{algorithm}
-		\caption{Fast Walsh-Hadamard Transform (FWHT)}
-		\begin{algorithmic}[1]
-			\State \textbf{Input:} Matrix $A$ of size $m \times n$, boolean flag $\text{copy}$
-			\State \textbf{Output:} Transformed matrix $A$
-			\State $h \gets 1$
-			\If{$\text{copy}$}
-				\State $A \gets \text{copy of } A$
-			\EndIf
-			\While{$h < m$}
-				\For{$i = 0$ to $m - 1$ with step $2h$}
-					\State Perform batch updates:
-					\Statex \hspace{\algorithmicindent} $A[i:i+h, :] \gets A[i:i+h, :] + A[i+h:i+2h, :]$
-					\Statex \hspace{\algorithmicindent} $A[i+h:i+2h, :] \gets A[i:i+h, :] - 2 \cdot A[i+h:i+2h, :]$
-				\EndFor
-				\State $h \gets 2h$
-			\EndWhile
-			\If{$\text{copy}$}
-				\State \Return $A$
-			\EndIf
-		\end{algorithmic}
-	\end{algorithm}
-	
+\section*{Appendix}
+\subsection*{Fast Walsh-Hadamard Transform}\label{apx:FWHT}
+We optimized the mentioned implementation of the FWHT in three ways.
+
+Firstly, we removed the inner loop by operating on \texttt{i:i+h} directly. Then we removed copies of intermediate values by doing in-place computations. Finally, we adapted the function for it to act on matrices directly instead of a list of vectors (effectively replacing a \texttt{python} loop over the columns of $A$ with a \texttt{numpy} one).
+
+When analyzing the resulting speed-up, we found it to be around 3 (and therefore around 30 compared to the \texttt{simpy} implementation). 
+\begin{algorithm}
+    \caption{Fast Walsh-Hadamard Transform (FWHT)}
+    \begin{algorithmic}[1]
+        \State \textbf{Input:} Matrix $A$ of size $m \times n$, boolean flag $\text{copy}$
+        \State \textbf{Output:} Transformed matrix $A$
+        \State $h \gets 1$
+        \If{$\text{copy}$}
+            \State $A \gets \text{copy of } A$
+        \EndIf
+        \While{$h < m$}
+            \For{$i = 0$ to $m - 1$ with step $2h$}
+                \State Perform batch updates:
+                \Statex \hspace{\algorithmicindent} $A[i:i+h, :] \gets A[i:i+h, :] + A[i+h:i+2h, :]$
+                \Statex \hspace{\algorithmicindent} $A[i+h:i+2h, :] \gets A[i:i+h, :] - 2 \cdot A[i+h:i+2h, :]$
+            \EndFor
+            \State $h \gets 2h$
+        \EndWhile
+        \If{$\text{copy}$}
+            \State \Return $A$
+        \EndIf
+    \end{algorithmic}
+\end{algorithm}
+
 	
 	\section*{Acknowledgements}
 		\paragraph{Amal}
