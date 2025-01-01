@@ -47,7 +47,6 @@ def parse_MNIST_file(file_path):
     Parse the MNIST dataset in LIBSVM format and construct a sparse matrix.
     This was obtained with github copilot and then tested + adapted. 
     '''
-
     n_features = 784  # MNIST features
     # Initialize storage for sparse matrix components
     data = []
@@ -131,25 +130,3 @@ if __name__ == '__main__':
     # avoid n > 30000 (equivalent to \approx 7GB)
     n = 1000
 
-
-'''
-def read_yearPredictionMSD(filename: str, size: int = 784, savepath: str = None):
-    
-    dataR = pd.read_csv(filename, sep=',', header=None)
-    n = len(dataR)
-    data = np.zeros((n, size))
-    labels = np.zeros((n, 1))
-
-    for i in range(n):
-        l = dataR.iloc[i, 0]
-        labels[i] = int(l[0])
-        l = l[6:]
-        indices_values = [tuple(map(float, pair.split(':'))) for pair in l.split()]
-        indices, values = zip(*indices_values)
-        indices = [int(i) for i in indices]
-        data[i, indices] = values
-
-    if savepath is not None:
-        data.tofile('./denseData.csv', sep=',', format='%10.f')
-        labels.tofile('./labels.csv', sep=',', format='%10.f')
-'''

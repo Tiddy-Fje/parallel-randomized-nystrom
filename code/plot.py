@@ -197,37 +197,6 @@ def plot_synthetic_spectra( n, r ):
     return
 
 
-def merge_figures( figname_1, figname_2, figname ):
-    '''
-    Generate a new figure by merging two figures (as in putting them side by side).
-
-    Parameters
-    ----------
-    figname_1 : str
-        Path to the first figure.
-    figname_2 : str
-        Path to the second figure.
-    figname : str
-        Name of the merged figure.
-    '''
-    import matplotlib.image as mpimg
-
-    img1 = mpimg.imread(f'../figures/{figname_1}.png')
-    img2 = mpimg.imread(f'../figures/{figname_2}.png')
-
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5.5))  
-
-    axes[0].imshow(img1)
-    axes[0].axis('off') 
-
-    axes[1].imshow(img2)
-    axes[1].axis('off') 
-
-#    plt.tight_layout()
-    plt.savefig(f'../figures/{figname}.png', dpi=300)  
-
-
-
 if __name__ == '__main__':
     #plot_synthetic_spectra( 30+5, 5 )
     ncores = [1,4,16,64]
@@ -237,7 +206,6 @@ if __name__ == '__main__':
     l_variation( seq_data_dict, ax=axes[0] )
     n_variation( seq_data_dict, ax=axes[1] )
     plt.savefig('../figures/runtimes_l_n_variation.png')
-    #merge_figures('runtimes_l_variation', 'runtimes_n_variation', 'runtimes_l_n_variation')
 
     cores_variation( par_data_dict, ncores )
 

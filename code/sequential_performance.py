@@ -2,7 +2,6 @@ from parallel import time_k_rank
 import numpy as np
 from mpi4py import MPI
 import h5py
-#from data_generation import synthetic_matrix
 
 def analysis( A_ij, n, l, k, sketch_type, seed_factor, comm, n_rep, output_file ):
     max_sketch_ts, max_k_rank_ts = time_k_rank( A_ij, n, l, k, sketch_type, seed_factor, comm, n_rep) 

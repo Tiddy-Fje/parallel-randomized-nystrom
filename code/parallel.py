@@ -9,9 +9,7 @@ from sequential import sequential_gaussian_sketch, block_SRHT_bis
 
 def time_function( function, *args, **kwargs ):
     start = time.perf_counter()
-    #print(kwargs)
     result = function(*args,**kwargs)
-    #print(kwargs)
     if result is not None:
         result = tuple(result)
     end = time.perf_counter()

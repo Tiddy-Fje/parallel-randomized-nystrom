@@ -2,22 +2,11 @@ from os import environ
 environ['OMP_NUM_THREADS'] = '1'
 
 import numpy as np
-import plot
+import plot # for plotting settings to activate
 import matplotlib.pyplot as plt
 from data_generation import synthetic_matrix
 from sequential import *
 from parallel import seq_rank_k_approx
-
-
-def fwht_mat(X):
-    """
-    Perform a Fast Walsh-Hadamard Transform (FWHT) using scipy's Hadamard matrix.
-    """
-    n, m = X.shape
-    assert (n & (n - 1)) == 0, "Number of rows must be a power of 2."
-    H = hadamard(n)
-    return H @ X
-
 
 def compute_relative_error(A, B,C, ks, normAnuc):
     errors = []
