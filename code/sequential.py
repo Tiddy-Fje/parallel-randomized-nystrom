@@ -14,7 +14,7 @@ def half_numpy_prod( A, Omega ):
 def sequential_gaussian_sketch( A, n, l, random_seed, half_numpy=True ):
     '''Generate Gaussian sketching matrix.'''
     rng = np.random.default_rng(random_seed)
-    omega = rng.normal(size=(n, l)) # / np.sqrt(l)  # FIGURE OUT IF NORMALIZATION IS NEEDED -> both work due to double multiplication in Nystrom
+    omega = rng.normal(size=(n, l)) # / np.sqrt(l)
     if not half_numpy:
         C = A @ omega
         B = omega.T @ C
